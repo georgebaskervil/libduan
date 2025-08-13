@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-test:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang make cmake ninja-build
+      - name: Configure
+        run: |
+          cmake --version
+          cmake --preset debug -DENABLE_WERROR=ON
+      - name: Build
+        run: cmake --build --preset debug --parallel
+      - name: Test
+        run: ctest --preset debug --output-on-failure

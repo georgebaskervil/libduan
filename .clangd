@@ -1,0 +1,6 @@
+CompileFlags:
+  Add: [-Wall, -Wextra, -Wpedantic]
+  Remove: [-fno-exceptions]
+Diagnostics:
+  ClangTidy:
+    Add: [modernize-*,bugprone-*,readability-*]

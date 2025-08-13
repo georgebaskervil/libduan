@@ -1,0 +1,11 @@
+Checks: >
+  -*,
+  bugprone-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  cppcoreguidelines-*
+WarningsAsErrors: '*'
+HeaderFilterRegex: '^(include|src)/'
+AnalyzeTemporaryDtors: true
+FormatStyle: none

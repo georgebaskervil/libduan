@@ -1,0 +1,37 @@
+# C++/CMake/macOS ignores
+# Build directories
+/build/
+/build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake-build-*/
+compile_commands.json
+
+# IDE/editor
+.vscode/
+.idea/
+*.code-workspace
+
+# Binaries and libs
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+.Spotlight-V100
+.Trashes
+
+# Test artifacts
+Testing/
+CTestTestfile.cmake
