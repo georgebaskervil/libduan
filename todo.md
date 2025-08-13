@@ -41,29 +41,30 @@ Goal: Replace prototype BMSSP code with a faithful implementation of Algorithms 
   - base_case.hpp / .cpp
   - bmssp.hpp / .cpp (recursive engine + top level driver)
   - verify.hpp (instrumentation/asserts)
-- [x] Move prototype BMSSP code to `src/legacy_prototype_bmssp.cpp` (temporarily still built; to disable in Phase 13).
-- [x] Update CMake to include new headers and legacy file.
-- [ ] Add feature flag `ENABLE_BMSSP_VERIFIER` (planned with Phase 8 but placeholder CMake option can be added earlier).
+- [x] Move prototype BMSSP code to `src/legacy_prototype_bmssp.cpp`.
+- [x] Update CMake to include new headers and legacy file behind option.
+- [x] Add feature flag `ENABLE_BMSSP_VERIFIER` placeholder (flag present; logic partial).
+- [x] Provide temporary minimal BMSSP (FindPivots/BaseCase/BMSSP) stub for tests (will be replaced by faithful versions in later phases).
 
 ## Phase 2: Distance / State Representation (H)
 
-- [ ] Implement `DistanceState` containing:
+- [x] Implement `DistanceState` containing:
   - dist[]
   - pred[]
   - hop_count[] (for tie-breaking under Assumption 2.1 surrogate)
   - complete[] (bool)
-- [ ] Provide `relax(u,v,w,allow_equal=true)` implementing ≤ rule (Remark 3.4) and predecessor update logic with lexicographic tie-breaking: (dist, hop_count, vertex_id).
-- [ ] Add function to mark vertex complete.
-- [ ] Add initialization helpers from source set S.
-- [ ] Adopt integer distances with overflow detection (non-negative weights). Initial underlying width = configurable `MIN_DISTANCE_BITS` (default 64; allow 32 for small graphs).
-- [ ] Implement widening `DistWord`: 32 -> 64 -> 128 (via built-in unsigned __int128 if available) -> big (vector<uint64_t>) as last resort (guarded by option).
-- [ ] Overflow detection using compiler intrinsics (e.g., `__builtin_add_overflow`) with portable fallback; on overflow trigger widening & full dist array reallocation.
-- [ ] CMake options:
+- [~] Provide `relax(u,v,w,allow_equal=true)` implementing ≤ rule (Remark 3.4) and predecessor update logic with lexicographic tie-breaking: (dist, hop_count, vertex_id). (Core logic present; tie-break path uses placeholder vertex_id_tiebreak param; BIGINT path currently compares via truncated 128-bit.)
+- [x] Add function to mark vertex complete.
+- [x] Add initialization helpers from source set S.
+- [x] Adopt integer distances with overflow detection (non-negative weights). Initial underlying width = configurable `MIN_DISTANCE_BITS` (default 64; allow 32 for small graphs).
+- [x] Implement widening `DistWord`: 32 -> 64 -> 128 (via built-in unsigned __int128 if available) -> big (vector<uint64_t>) as last resort (guarded by option).
+- [x] Overflow detection using compiler intrinsics (e.g., `__builtin_add_overflow`) with portable fallback; on overflow triggers widening for the two endpoints (array-wide reallocation TBD for global invariants, not yet required for tests).
+- [x] CMake options (declared & integrated):
   - `MIN_DISTANCE_BITS` (32|64) default 64.
   - `ENABLE_DISTANCE_WIDENING` (ON default) to attempt widening before signaling fatal error.
-  - `ENABLE_BIGINT_FALLBACK` (OFF default) enabling final arbitrary precision layer.
-- [ ] Logging (verifier mode): record widen events & memory usage delta.
-- [ ] Failure semantics: If widening disabled or OOM during widen, raise fatal error (consistent with eventual OOM consequence).
+  - `ENABLE_BIGINT_FALLBACK` (OFF default) enabling final arbitrary precision layer (promotion helpers present; full multi-limb add still pending in 2b).
+- [~] Logging (verifier mode): widen & overflow counters increment; memory delta tracking pending.
+- [ ] Failure semantics: If widening disabled or OOM during widen, raise fatal error (OOM simulation & global rollback handling pending).
 
 ## Phase 2b: Distance Scaling & Reliability (M)
 
@@ -182,9 +183,13 @@ Goal: Replace prototype BMSSP code with a faithful implementation of Algorithms 
 
 ## Phase 13: Cleanup & Migration (M)
 
-- [ ] Remove legacy prototype from build (keep source for historical diff / move to docs/examples).
-- [ ] Resolve compiler warnings (sign conversion, unused vars).
+- [x] Remove legacy prototype from default build (file retained, gated by `ENABLE_LEGACY_BMSSP`).
+- [~] Resolve compiler warnings (remaining: sign-conversion in `bmssp_state.cpp` relax helper; add local size_t indices & silence unused tiebreak param cleanly).
 - [ ] Clang-Tidy configuration for future maintenance.
+- [ ] Delete or move legacy file to `legacy/` directory (optional archival) once faithful implementation complete.
+
+### Phase 13 Notes (current status)
+Legacy warning flood eliminated by option default OFF. Minimal stub implementation compiles cleanly except for a few narrowing/sign warnings in state code; scheduled for fix alongside proper Algorithm translations.
 
 ## Phase 14: Stretch Improvements (opt)
 
