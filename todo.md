@@ -16,9 +16,19 @@ Goal: Replace prototype BMSSP code with a faithful implementation of Algorithms 
 
 ## Phase 0: Baseline & Goals
 
-- [ ] Capture current prototype snapshot (tag or branch) before refactor.
-- [ ] Define success criteria: passes correctness tests vs Dijkstra on random constant-degree graphs; invariants hold (|P| ≤ |W|/k, etc.).
-- [ ] Decide numeric types (double vs integer) & precision handling strategy.
+- [x] Capture current prototype snapshot (tag or branch) before refactor. (Safety commit already made.)
+- [x] Define success criteria: passes correctness tests vs Boost Graph Library Dijkstra (Boost REQUIRED) on random constant-degree graphs; invariants hold (|P| ≤ |W|/k, etc.).
+  - [x] Require Boost (latest stable) via `find_package(Boost REQUIRED)`; fail CMake if not found (no fallback gating tests).
+  - [x] Exact distance equality required (integer widening ensures determinism).
+  - [x] Random test parameters: sizes {64, 256, 1024, 4096}; per size 10 graphs; uniform integer weights in [1,100]; out-degree ≤ 2.
+  - [x] Reproducible seeds: first 10 primes {2,3,5,7,11,13,17,19,23,29}.
+  - [x] Default fail-fast behavior on first mismatch; optional aggregation flag.
+  - [x] Configuration options to add (later phases):
+      * `BMSSP_FAIL_FAST_TESTS` (ON default) – when OFF, aggregate & report all mismatches.
+      * `BMSSP_REQUIRE_EXACT_VERIFY` (ON default) – guard to prevent approximate modes.
+      * `BMSSP_AGGREGATE_TEST_ERRORS` (OFF default) alias / secondary toggle (mutually exclusive with fail-fast when ON).
+  - [x] Internal simple Dijkstra retained only for micro-bench / diagnostic (never authoritative for pass/fail when Boost present).
+- [x] Decide numeric types & precision handling strategy: integer distances with widening + optional bigint fallback (see Phase 2 / 2b).
 
 ## Phase 1: Module Scaffolding (H)
 
@@ -74,7 +84,10 @@ Goal: Replace prototype BMSSP code with a faithful implementation of Algorithms 
 
 ## Phase 4: Data Structure 𝒟 (Lemma 3.3) (H)
 
-- [ ] Design block structures: Block {vector<Elem>, upper_bound}.
+- [ ] Design block structures:  
+  - Each block should contain:
+    - A `vector` (or similar sequence) of elements.
+    - An `upper_bound` value representing the maximum key in the block.
 - [ ] Two sequences: D0 (batch prepends) + D1 (inserts) with std::map keyed by block upper bound for D1 ordering.
 - [ ] Operations:
   - Initialize(M, B)
