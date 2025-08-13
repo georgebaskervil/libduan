@@ -35,3 +35,6 @@ Icon?
 # Test artifacts
 Testing/
 CTestTestfile.cmake
+
+# tooling
+node_modules

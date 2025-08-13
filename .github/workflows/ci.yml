@@ -14,15 +14,20 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Set up dependencies
+      - name: Set up dependencies (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang make cmake ninja-build
+          sudo apt-get install -y clang make cmake ninja-build libjemalloc-dev
+      - name: Set up dependencies (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          brew update
+          brew install jemalloc
       - name: Configure
         run: |
           cmake --version
-          cmake --preset debug -DENABLE_WERROR=ON
+          cmake --preset debug -DENABLE_WERROR=ON -DENABLE_JEMALLOC=ON
       - name: Build
         run: cmake --build --preset debug --parallel
       - name: Test

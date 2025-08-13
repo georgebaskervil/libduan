@@ -22,6 +22,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Options
 option(ENABLE_WERROR "Treat warnings as errors" OFF)
+option(ENABLE_JEMALLOC "Link against jemalloc if available" ON)
+option(ENABLE_GLOBAL_JEMALLOC "Override global new/delete using jemalloc" OFF)
+option(ENABLE_JEMALLOC_DIAGNOSTICS "Print jemalloc version at startup (noisy)" OFF)
 
 # Common warnings function
 function(enable_project_warnings target_name)
@@ -65,6 +68,35 @@ target_link_libraries(duansalgorithm PRIVATE duansalgorithm::cpp_starter)
 
 enable_project_warnings(duansalgorithm)
 
+# jemalloc detection and usage (optional)
+if(ENABLE_JEMALLOC)
+  find_library(JEMALLOC_LIB jemalloc)
+  find_path(JEMALLOC_INCLUDE_DIR jemalloc/jemalloc.h
+    PATHS
+      /opt/homebrew/include
+      /usr/local/include
+      /usr/include
+      $ENV{CPATH}
+  )
+  if(JEMALLOC_LIB)
+    # Link publicly on the library so consumers get the allocator symbols.
+    target_link_libraries(cpp_starter PUBLIC ${JEMALLOC_LIB})
+    target_compile_definitions(cpp_starter PUBLIC HAVE_JEMALLOC)
+    if(JEMALLOC_INCLUDE_DIR)
+      target_include_directories(cpp_starter PUBLIC ${JEMALLOC_INCLUDE_DIR})
+      message(STATUS "jemalloc include: ${JEMALLOC_INCLUDE_DIR}")
+    endif()
+    message(STATUS "jemalloc found: ${JEMALLOC_LIB}")
+  else()
+    message(STATUS "jemalloc not found; using default allocator")
+  endif()
+endif()
+
+# Optionally override global new/delete using jemalloc (applies to STL by default)
+if(ENABLE_GLOBAL_JEMALLOC AND ENABLE_JEMALLOC AND JEMALLOC_LIB)
+  target_sources(duansalgorithm PRIVATE src/jemalloc_new_delete.cpp)
+endif()
+
 # Testing setup
 include(CTest)
 if(BUILD_TESTING)
@@ -89,6 +121,14 @@ if(BUILD_TESTING)
   )
   target_compile_features(cpp_starter_tests PRIVATE cxx_std_20)
   enable_project_warnings(cpp_starter_tests)
+  if(ENABLE_GLOBAL_JEMALLOC AND ENABLE_JEMALLOC AND JEMALLOC_LIB)
+    target_sources(cpp_starter_tests PRIVATE src/jemalloc_new_delete.cpp)
+  endif()
+
+  if(ENABLE_JEMALLOC_DIAGNOSTICS AND ENABLE_JEMALLOC AND JEMALLOC_LIB)
+    target_sources(duansalgorithm PRIVATE src/jemalloc_diag.cpp)
+    target_sources(cpp_starter_tests PRIVATE src/jemalloc_diag.cpp)
+  endif()
 
   include(GoogleTest)
   gtest_discover_tests(cpp_starter_tests)
