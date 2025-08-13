@@ -28,6 +28,9 @@ TEST(BMSSP, TrivialLine) {
   EXPECT_FALSE(res.U.empty());
   // Ensure distances monotonically non-decreasing along discovered path
   for (int v : res.U) {
-    EXPECT_GE(dist[v], 0.0);
+    if(v<0) continue; // defensive
+    std::size_t vv = static_cast<std::size_t>(v);
+    ASSERT_LT(vv, dist.size());
+    EXPECT_GE(dist[vv], 0.0);
   }
 }

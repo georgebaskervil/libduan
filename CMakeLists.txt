@@ -49,11 +49,11 @@ function(enable_project_warnings target_name)
 endfunction()
 
 # Library target
-option(ENABLE_LEGACY_BMSSP "Build legacy prototype BMSSP implementation" ON)
+option(ENABLE_LEGACY_BMSSP "Build legacy prototype BMSSP implementation" OFF)
 
 add_library(cpp_starter
   src/lib.cpp
-  src/legacy_prototype_bmssp.cpp
+  src/bmssp_algo.cpp
   src/bmssp_state.cpp
 )
 add_library(duansalgorithm::cpp_starter ALIAS cpp_starter)
@@ -133,6 +133,7 @@ if(BUILD_TESTING)
     tests/lib_test.cpp
   )
   if(ENABLE_LEGACY_BMSSP)
+    target_sources(cpp_starter PRIVATE src/legacy_prototype_bmssp.cpp)
     target_sources(cpp_starter_tests PRIVATE src/legacy_prototype_bmssp.cpp)
   endif()
   target_link_libraries(cpp_starter_tests PRIVATE

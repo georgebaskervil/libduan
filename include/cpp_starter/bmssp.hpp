@@ -23,15 +23,32 @@
 
 namespace cpp_starter {
 
-struct Edge { int to; double w; };
+struct Edge { std::size_t to; double w; };
 
 class Graph {
 public:
   Graph() = default;
   explicit Graph(std::size_t n) : adj_(n) {}
   std::size_t size() const noexcept { return adj_.size(); }
-  void add_edge(int u, int v, double w) { adj_[u].push_back({v, w}); }
-  const std::vector<Edge>& neighbors(int u) const { return adj_[u]; }
+  void add_edge(std::size_t u, std::size_t v, double w) {
+    if(u>=adj_.size() || v>=adj_.size()) return;
+    adj_[u].push_back({v, w});
+  }
+  // Int convenience wrappers that cast once to size_t (avoid signed indexing warnings)
+  void add_edge(int u, int v, double w){
+    if(u<0||v<0) return;
+    std::size_t uu = static_cast<std::size_t>(u);
+    std::size_t vv = static_cast<std::size_t>(v);
+    add_edge(uu,vv,w);
+  }
+  const std::vector<Edge>& neighbors(std::size_t u) const { return adj_[u]; }
+  const std::vector<Edge>& neighbors(int u) const {
+    static const std::vector<Edge> empty;
+    if(u<0) return empty;
+    std::size_t uu = static_cast<std::size_t>(u);
+    if(uu>=adj_.size()) return empty;
+    return adj_[uu];
+  }
 private:
   std::vector<std::vector<Edge>> adj_;
 };

@@ -36,9 +36,13 @@ static void widen_word(DistWord& w, DistWidth target){
 
 bool relax(DistState& st, int u, int v, uint64_t w, bool allow_equal, int vertex_id_tiebreak, bool* widened_out){
   if(widened_out) *widened_out=false;
-  if(u<0||v<0 || (size_t)u>=st.dist.size() || (size_t)v>=st.dist.size()) return false;
-  auto& du = st.dist[u];
-  auto& dv = st.dist[v];
+  if(u<0||v<0) return false;
+  std::size_t su = static_cast<std::size_t>(u);
+  std::size_t sv = static_cast<std::size_t>(v);
+  if(su>=st.dist.size() || sv>=st.dist.size()) return false;
+  (void)vertex_id_tiebreak; // tie-break not implemented yet
+  auto& du = st.dist[su];
+  auto& dv = st.dist[sv];
   if(du.is_inf()) return false; // can't relax from infinity
 
   // Only supporting up to 64-bit active arithmetic initially; widening to 128 or bigint reserved for overflow.
@@ -48,8 +52,8 @@ bool relax(DistState& st, int u, int v, uint64_t w, bool allow_equal, int vertex
   if(of){
 #if defined(ENABLE_DISTANCE_WIDENING)
     // Widen to 128 then retry (simplified placeholder)
-    widen_word(st.dist[u], DistWidth::W128);
-    widen_word(st.dist[v], DistWidth::W128);
+  widen_word(st.dist[su], DistWidth::W128);
+  widen_word(st.dist[sv], DistWidth::W128);
     if(widened_out) *widened_out=true;
     // For now treat overflow as non-improvement (full 128-bit path TODO Phase 2b)
     return false;
@@ -67,7 +71,7 @@ bool relax(DistState& st, int u, int v, uint64_t w, bool allow_equal, int vertex
     else if(dv.width==DistWidth::W32) dv.small.v32 = (uint32_t)cand;
   }
   // hop/lexicographic tie-breaking not yet implemented (Phase 2 continuation)
-  st.pred[v]=u;
+  st.pred[sv]=u;
   return better || equal_ok;
 }
 
