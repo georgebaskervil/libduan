@@ -32,8 +32,8 @@ Goal: Replace prototype BMSSP code with a faithful implementation of Algorithms 
 
 ## Phase 1: Module Scaffolding (H)
 
-- [ ] Create directory `include/cpp_starter/bmssp/` & `src/bmssp/`.
-- [ ] Split interfaces:
+- [x] Create directory `include/cpp_starter/bmssp/` & `src/bmssp/`.
+- [x] Split interfaces:
   - graph.hpp
   - state.hpp (DistanceState / Relaxation API)
   - structure.hpp (Data structure 𝒟 interface per Lemma 3.3)
@@ -41,8 +41,9 @@ Goal: Replace prototype BMSSP code with a faithful implementation of Algorithms 
   - base_case.hpp / .cpp
   - bmssp.hpp / .cpp (recursive engine + top level driver)
   - verify.hpp (instrumentation/asserts)
-- [ ] Move prototype BMSSP code to `src/legacy/bmssp_prototype.cpp` (keep for reference; exclude from build by default).
-- [ ] Update CMake to add new sources & optional feature flag `ENABLE_BMSSP_VERIFIER`.
+- [x] Move prototype BMSSP code to `src/legacy_prototype_bmssp.cpp` (temporarily still built; to disable in Phase 13).
+- [x] Update CMake to include new headers and legacy file.
+- [ ] Add feature flag `ENABLE_BMSSP_VERIFIER` (planned with Phase 8 but placeholder CMake option can be added earlier).
 
 ## Phase 2: Distance / State Representation (H)
 

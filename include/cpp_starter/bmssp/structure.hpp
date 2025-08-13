@@ -1,0 +1,23 @@
+#pragma once
+#include <vector>
+#include <utility>
+#include <cstdint>
+
+namespace bmssp {
+
+// Interface skeleton for data structure D (Lemma 3.3)
+class PartialPriority {
+public:
+  struct Item { int key; unsigned __int128 value; };
+  void initialize(std::size_t M, unsigned __int128 B);
+  void insert(int key, unsigned __int128 value); // Insert / decrease-key semantics
+  void batch_prepend(std::vector<Item>& batch); // values all smaller than any existing
+  bool pull(std::vector<int>& out_keys, unsigned __int128& boundary); // returns up to M keys
+  bool empty() const noexcept { return size_ == 0; }
+private:
+  std::size_t M_ = 0;
+  unsigned __int128 B_ = 0;
+  std::size_t size_ = 0; // number of keys stored
+};
+
+} // namespace bmssp

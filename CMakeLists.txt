@@ -25,6 +25,7 @@ option(ENABLE_WERROR "Treat warnings as errors" OFF)
 option(ENABLE_JEMALLOC "Link against jemalloc if available" ON)
 option(ENABLE_GLOBAL_JEMALLOC "Override global new/delete using jemalloc" OFF)
 option(ENABLE_JEMALLOC_DIAGNOSTICS "Print jemalloc version at startup (noisy)" OFF)
+option(ENABLE_BMSSP_VERIFIER "Enable BMSSP invariant checking and verbose stats" OFF)
 
 # Common warnings function
 function(enable_project_warnings target_name)
@@ -44,8 +45,11 @@ function(enable_project_warnings target_name)
 endfunction()
 
 # Library target
+option(ENABLE_LEGACY_BMSSP "Build legacy prototype BMSSP implementation" ON)
+
 add_library(cpp_starter
   src/lib.cpp
+  src/legacy_prototype_bmssp.cpp
 )
 add_library(duansalgorithm::cpp_starter ALIAS cpp_starter)
 
@@ -58,6 +62,9 @@ target_include_directories(cpp_starter
 target_compile_features(cpp_starter PUBLIC cxx_std_20)
 
 enable_project_warnings(cpp_starter)
+if(ENABLE_BMSSP_VERIFIER)
+  target_compile_definitions(cpp_starter PUBLIC ENABLE_BMSSP_VERIFIER)
+endif()
 
 # Executable
 add_executable(duansalgorithm
@@ -115,10 +122,16 @@ if(BUILD_TESTING)
   add_executable(cpp_starter_tests
     tests/lib_test.cpp
   )
+  if(ENABLE_LEGACY_BMSSP)
+    target_sources(cpp_starter_tests PRIVATE src/legacy_prototype_bmssp.cpp)
+  endif()
   target_link_libraries(cpp_starter_tests PRIVATE
     duansalgorithm::cpp_starter
     GTest::gtest_main
   )
+  if(ENABLE_BMSSP_VERIFIER)
+    target_compile_definitions(cpp_starter_tests PUBLIC ENABLE_BMSSP_VERIFIER)
+  endif()
   target_compile_features(cpp_starter_tests PRIVATE cxx_std_20)
   enable_project_warnings(cpp_starter_tests)
   if(ENABLE_GLOBAL_JEMALLOC AND ENABLE_JEMALLOC AND JEMALLOC_LIB)
