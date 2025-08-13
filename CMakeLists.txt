@@ -26,6 +26,10 @@ option(ENABLE_JEMALLOC "Link against jemalloc if available" ON)
 option(ENABLE_GLOBAL_JEMALLOC "Override global new/delete using jemalloc" OFF)
 option(ENABLE_JEMALLOC_DIAGNOSTICS "Print jemalloc version at startup (noisy)" OFF)
 option(ENABLE_BMSSP_VERIFIER "Enable BMSSP invariant checking and verbose stats" OFF)
+set(MIN_DISTANCE_BITS "64" CACHE STRING "Minimum distance bit width for BMSSP distances (32 or 64)")
+set_property(CACHE MIN_DISTANCE_BITS PROPERTY STRINGS 32 64)
+option(ENABLE_DISTANCE_WIDENING "Allow automatic distance widening on overflow" ON)
+option(ENABLE_BIGINT_FALLBACK "Enable bigint fallback after 128-bit widening (experimental)" OFF)
 
 # Common warnings function
 function(enable_project_warnings target_name)
@@ -50,6 +54,7 @@ option(ENABLE_LEGACY_BMSSP "Build legacy prototype BMSSP implementation" ON)
 add_library(cpp_starter
   src/lib.cpp
   src/legacy_prototype_bmssp.cpp
+  src/bmssp_state.cpp
 )
 add_library(duansalgorithm::cpp_starter ALIAS cpp_starter)
 
@@ -65,6 +70,11 @@ enable_project_warnings(cpp_starter)
 if(ENABLE_BMSSP_VERIFIER)
   target_compile_definitions(cpp_starter PUBLIC ENABLE_BMSSP_VERIFIER)
 endif()
+target_compile_definitions(cpp_starter PUBLIC
+  MIN_DISTANCE_BITS=${MIN_DISTANCE_BITS}
+  $<$<BOOL:${ENABLE_DISTANCE_WIDENING}>:ENABLE_DISTANCE_WIDENING>
+  $<$<BOOL:${ENABLE_BIGINT_FALLBACK}>:ENABLE_BIGINT_FALLBACK>
+)
 
 # Executable
 add_executable(duansalgorithm
