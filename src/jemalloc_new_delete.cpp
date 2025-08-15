@@ -14,8 +14,8 @@
 // Global new/delete overrides using jemalloc when available.
 // Enabled via ENABLE_GLOBAL_JEMALLOC in CMake.
 
-#include <new>
 #include <cstddef>
+#include <new>
 
 #ifdef HAVE_JEMALLOC
 #include <jemalloc/jemalloc.h>

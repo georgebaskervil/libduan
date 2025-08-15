@@ -1,6 +1,6 @@
 #pragma once
-#include <vector>
 #include <cstdint>
+#include <vector>
 
 namespace bmssp {
 struct VerificationStats {
@@ -10,4 +10,4 @@ struct VerificationStats {
   std::size_t batch_prepends = 0;
   std::size_t pulls = 0;
 };
-}
+}  // namespace bmssp

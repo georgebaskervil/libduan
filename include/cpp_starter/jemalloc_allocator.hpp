@@ -51,7 +51,7 @@ struct JemallocAllocator {
 #endif
     void* p = mallocx(n * sizeof(T), flags);
 #else
-  void* p = ::operator new(n * sizeof(T));
+    void* p = ::operator new(n * sizeof(T));
 #endif
     if (!p) throw std::bad_alloc();
     return static_cast<T*>(p);
@@ -59,9 +59,9 @@ struct JemallocAllocator {
 
   void deallocate(T* p, std::size_t /*n*/) noexcept {
 #ifdef HAVE_JEMALLOC
-  dallocx(static_cast<void*>(p), 0);
+    dallocx(static_cast<void*>(p), 0);
 #else
-  ::operator delete(static_cast<void*>(p));
+    ::operator delete(static_cast<void*>(p));
 #endif
   }
 

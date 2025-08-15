@@ -1,8 +1,9 @@
 // License: Placeholder - add your license details here.
 #include <iostream>
 #include <vector>
-#include "cpp_starter/lib.hpp"
+
 #include "cpp_starter/jemalloc_allocator.hpp"
+#include "cpp_starter/lib.hpp"
 
 int main() {
   using cpp_starter::sum;
