@@ -26,6 +26,16 @@ struct BigInt {
     for(size_t i=0;i<r.limbs.size();++i){ unsigned __int128 sum=carry; if(i<a.limbs.size()) sum+=a.limbs[i]; if(i<b.limbs.size()) sum+=b.limbs[i]; r.limbs[i]=(uint64_t)sum; carry=sum>>64; }
     if(r.limbs.back()==0) r.limbs.pop_back(); else if(carry) overflow=false; return r;
   }
+  static BigInt add_u64(const BigInt& a, uint64_t b){
+    BigInt r; r.limbs.resize(a.limbs.size()+1,0);
+    unsigned __int128 carry=b; std::size_t i=0; for(; i<a.limbs.size(); ++i){ unsigned __int128 sum = (unsigned __int128)a.limbs[i] + carry; r.limbs[i] = (uint64_t)sum; carry = sum >> 64; }
+    r.limbs[i] = (uint64_t)carry; if(r.limbs.back()==0) r.limbs.pop_back(); return r; }
+  void add_u64_inplace(uint64_t b){ unsigned __int128 carry=b; std::size_t i=0; for(; i<limbs.size() && carry; ++i){ unsigned __int128 sum=(unsigned __int128)limbs[i]+carry; limbs[i]=(uint64_t)sum; carry=sum>>64; } if(carry) limbs.push_back((uint64_t)carry); }
+  static int cmp(const BigInt& a, const BigInt& b){
+    if(a.limbs.size()!=b.limbs.size()) return a.limbs.size()<b.limbs.size() ? -1:1;
+    for(std::size_t i=a.limbs.size(); i-- > 0;){ if(a.limbs[i]!=b.limbs[i]) return a.limbs[i]<b.limbs[i]? -1:1; }
+    return 0;
+  }
 };
 
 struct DistWord {
@@ -51,6 +61,59 @@ struct DistWord {
   void assign_u128(unsigned __int128 v){ if(v<=std::numeric_limits<uint64_t>::max()) assign_u64((uint64_t)v); else { width=DistWidth::W128; small.v128=v; } }
 };
 
+inline BigInt distword_to_big(const DistWord& d){
+  BigInt b; switch(d.width){
+    case DistWidth::W32: b.assign(d.small.v32); break;
+    case DistWidth::W64: b.assign(d.small.v64); break;
+    case DistWidth::W128: b.assign_u128(d.small.v128); break;
+    case DistWidth::BIG: return d.big; }
+  return b;
+}
+
+// Compare a DistWord (which may itself be BIG) against a BigInt candidate value.
+// Returns -1 if cand < current, 0 if equal, 1 if cand > current.
+inline int compare_distword_big_candidate(const DistWord& current, const BigInt& cand){
+  if(current.width!=DistWidth::BIG){
+    BigInt cur = distword_to_big(current);
+    int c = BigInt::cmp(cur, cand);
+    if(c<0) return 1; // cand greater
+    if(c>0) return -1; // cand smaller
+    return 0;
+  }
+  int c = BigInt::cmp(current.big, cand);
+  if(c<0) return 1; // cand greater
+  if(c>0) return -1; // cand smaller
+  return 0;
+}
+
+// Total order compare between two DistWords (handles BIG precisely).
+inline int compare(const DistWord& a, const DistWord& b){
+  if(a.width==DistWidth::BIG || b.width==DistWidth::BIG){
+#ifdef ENABLE_BIGINT_FALLBACK
+    BigInt ab = (a.width==DistWidth::BIG)? a.big : distword_to_big(a);
+    BigInt bb = (b.width==DistWidth::BIG)? b.big : distword_to_big(b);
+    return BigInt::cmp(ab,bb);
+#else
+    // Fallback disabled: compare truncated 128-bit representations
+    unsigned __int128 av=0,bv=0; if(a.width==DistWidth::W32) av=a.small.v32; else if(a.width==DistWidth::W64) av=a.small.v64; else if(a.width==DistWidth::W128) av=a.small.v128; if(b.width==DistWidth::W32) bv=b.small.v32; else if(b.width==DistWidth::W64) bv=b.small.v64; else if(b.width==DistWidth::W128) bv=b.small.v128; if(av<bv) return -1; if(av>bv) return 1; return 0;
+#endif
+  }
+  // Neither BIG
+  if(a.width!=b.width){
+    unsigned __int128 av=0,bv=0;
+    if(a.width==DistWidth::W32) av=a.small.v32; else if(a.width==DistWidth::W64) av=a.small.v64; else av=a.small.v128;
+    if(b.width==DistWidth::W32) bv=b.small.v32; else if(b.width==DistWidth::W64) bv=b.small.v64; else bv=b.small.v128;
+    if(av<bv) return -1; if(av>bv) return 1; return 0;
+  }
+  switch(a.width){
+    case DistWidth::W32: if(a.small.v32<b.small.v32) return -1; if(a.small.v32>b.small.v32) return 1; return 0;
+    case DistWidth::W64: if(a.small.v64<b.small.v64) return -1; if(a.small.v64>b.small.v64) return 1; return 0;
+    case DistWidth::W128: if(a.small.v128<b.small.v128) return -1; if(a.small.v128>b.small.v128) return 1; return 0;
+    case DistWidth::BIG: /* handled above */ return 0;
+  }
+  return 0;
+}
+
 struct DistState {
   std::vector<DistWord> dist;
   std::vector<int> pred;
@@ -62,6 +125,16 @@ struct DistState {
   // Diagnostics counters (incremented in relax / widening paths)
   uint64_t widen_events=0;
   uint64_t overflow_events=0;
+  uint64_t relax_improve_events=0;   // strict improvement
+  uint64_t relax_equal_events=0;     // accepted equal-distance relaxation
+  uint64_t relax_reject_events=0;    // rejected attempts (allow_equal true but tie-break lost)
+  uint64_t relax_attempts=0;         // total relax calls reaching comparison stage
+  uint64_t oom_simulated_events=0;   // simulated OOM occurrences
+  // Additional tracking
+  uint64_t widen_pairs=0;            // number of times both endpoints widened together
+  uint64_t bigint_total_limbs=0;     // cumulative limbs assigned during BIG promotions
+  uint64_t widen_bytes=0;            // theoretical bytes added by widening (approx)
+  uint64_t big_bytes=0;              // bytes in BigInt limbs assigned
 #endif
 };
 
@@ -90,7 +163,16 @@ inline void initialize_sources(DistState& st, const std::vector<int>& S){
 inline bool is_complete(const DistState& st, int v){ return v>=0 && static_cast<std::size_t>(v) < st.complete.size() && st.complete[static_cast<std::size_t>(v)]!=0; }
 
 // Overflow-safe addition with widening; returns true if improved.
-bool relax(DistState& st, int u, int v, uint64_t w, bool allow_equal=true, int vertex_id_tiebreak=0, bool* widened_out=nullptr);
+bool relax(DistState& st, int u, int v, uint64_t w, bool allow_equal=true, bool* widened_out=nullptr);
+
+// Optional hook to simulate OOM during widening for testing failure semantics.
+inline bool simulate_oom(){
+#ifdef BMSSP_SIMULATE_OOM
+  return true;
+#else
+  return false;
+#endif
+}
 
 // Helper: promote a DistWord to BIG (BigInt) form preserving value.
 inline void promote_to_big(DistWord& dw){
@@ -106,35 +188,7 @@ inline void promote_to_big(DistWord& dw){
 #endif
 }
 
-// Compare DistWord (possibly BIG) with a candidate unsigned __int128 value.
-// Returns -1 if candidate < current, 0 if equal, 1 if candidate > current.
-inline int compare_candidate_u128(const DistWord& current, unsigned __int128 cand){
-  switch(current.width){
-    case DistWidth::W32: {
-      unsigned __int128 cur = current.small.v32; if(cand<cur) return -1; if(cand>cur) return 1; return 0; }
-    case DistWidth::W64: {
-      unsigned __int128 cur = current.small.v64; if(cand<cur) return -1; if(cand>cur) return 1; return 0; }
-    case DistWidth::W128: {
-      unsigned __int128 cur = current.small.v128; if(cand<cur) return -1; if(cand>cur) return 1; return 0; }
-    case DistWidth::BIG: {
-#ifdef ENABLE_BIGINT_FALLBACK
-      // Interpret first two limbs (if present) as 128-bit truncated value.
-      unsigned __int128 cur = 0;
-      if(!current.big.limbs.empty()){
-        cur = current.big.limbs[0];
-        if(current.big.limbs.size()>1){ cur |= (unsigned __int128)current.big.limbs[1] << 64; }
-      }
-      // If BIG has more than 2 limbs, it is definitely > 2^128-1 so cand < current unless cand represents same truncated and higher limbs are zero (impossible). Treat as cand<current.
-      if(current.big.limbs.size()>2) return -1;
-      if(cand<cur) return -1; if(cand>cur) return 1; return 0;
-#else
-      // Fallback disabled, treat as equal for safety.
-      return 0;
-#endif
-    }
-  }
-  return 0;
-}
+// Removed old truncated compare_candidate_u128 (superseded by full compare functions)
 
 
 

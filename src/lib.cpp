@@ -1,6 +1,6 @@
 // License: Placeholder - add your license details here.
 #include "cpp_starter/lib.hpp"
-// Legacy prototype BMSSP kept temporarily (moved to legacy_prototype_bmssp.cpp)
+// Legacy BMSSP prototype fully removed.
 
 namespace cpp_starter {
 

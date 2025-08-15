@@ -49,7 +49,6 @@ function(enable_project_warnings target_name)
 endfunction()
 
 # Library target
-option(ENABLE_LEGACY_BMSSP "Build legacy prototype BMSSP implementation" OFF)
 
 add_library(cpp_starter
   src/lib.cpp
@@ -130,11 +129,10 @@ if(BUILD_TESTING)
 
   enable_testing()
   add_executable(cpp_starter_tests
-    tests/lib_test.cpp
-  )
-  if(ENABLE_LEGACY_BMSSP)
-    target_sources(cpp_starter PRIVATE src/legacy_prototype_bmssp.cpp)
-    target_sources(cpp_starter_tests PRIVATE src/legacy_prototype_bmssp.cpp)
+      tests/lib_test.cpp
+    )
+  if(ENABLE_BIGINT_FALLBACK)
+    target_sources(cpp_starter_tests PRIVATE tests/bigint_relax_test.cpp)
   endif()
   target_link_libraries(cpp_starter_tests PRIVATE
     duansalgorithm::cpp_starter
