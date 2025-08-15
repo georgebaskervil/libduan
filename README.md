@@ -55,14 +55,48 @@ cmake --build --preset debug
 ```
 
 - Runtime preload (OS interposition):
- 	- macOS (Homebrew path):
+  - macOS (Homebrew path):
 
   ```zsh
   DYLD_INSERT_LIBRARIES=/opt/homebrew/lib/libjemalloc.dylib ./build/debug/bin/duansalgorithm
   ```
 
- 	- Linux (typical path, adjust if needed):
+  - Linux (typical path, adjust if needed):
 
   ```zsh
   LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2 ./build/debug/bin/duansalgorithm
   ```
+
+## BMSSP distance reliability and performance
+
+This project implements integer distance widening with optional BigInt fallback and a fast-path to skip overflow checks when provably safe. Use these build flags:
+
+- ENABLE_DISTANCE_WIDENING (default ON): Automatically widen distances on overflow (32→64→128). If OFF, overflow throws.
+- ENABLE_BIGINT_FALLBACK (default OFF): Promote beyond 128-bit to BigInt on overflow. When ON, unit tests add BigInt coverage.
+- ENABLE_BMSSP_VERIFIER (default OFF): Enables counters and optional bench test output.
+
+Fast-path configuration
+
+You can configure a safe bound at runtime by setting `DistState::fastpath_u64_max_sum` (e.g., ≤ (n-1)·max_edge_weight). If `base + w` ≤ this bound, `relax` skips the overflow check on the hot path.
+
+Example (pseudo-usage inside your driver):
+
+```cpp
+DistState st = make_state(n);
+st.fastpath_u64_max_sum = static_cast<uint64_t>((n-1)) * static_cast<uint64_t>(max_edge_w);
+```
+
+Running the widening benchmark (counts only)
+
+```zsh
+# Configure with verifier enabled to see counters
+cmake --preset debug -DENABLE_BMSSP_VERIFIER=ON
+cmake --build --preset debug
+ctest --preset debug --output-on-failure -V -R BMSSPWidenBench
+```
+
+Trade-offs
+
+- Reliability: With widening and BigInt, distances never overflow for non-negative weights; memory and CPU cost increase when widening triggers, especially with BigInt.
+- Performance: The fast-path improves hot-loop performance when a safe bound is known. If the bound is too high (effectively max uint64), most operations still take the branchless sum path; near-bound additions may still require checks or widening.
+- Determinism: All arithmetic is integer-based; results are exact and deterministic across platforms given identical flags.

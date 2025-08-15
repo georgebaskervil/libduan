@@ -9,7 +9,7 @@
 namespace bmssp {
 
 static bool add_overflow_u64(uint64_t a, uint64_t b, uint64_t& out){
-#if BMSSP_HAVE_ADD_OVERFLOW
+#ifdef BMSSP_HAVE_ADD_OVERFLOW
   return __builtin_add_overflow(a,b,&out);
 #else
   unsigned __int128 sum=(unsigned __int128)a + b; out=(uint64_t)sum; return sum>std::numeric_limits<uint64_t>::max();
@@ -55,40 +55,47 @@ bool relax(DistState& st, int u, int v, uint64_t w, bool allow_equal, bool* wide
 
   auto width_bytes = [](DistWidth w)->uint64_t{
     switch(w){ case DistWidth::W32: return 4; case DistWidth::W64: return 8; case DistWidth::W128: return 16; case DistWidth::BIG: return 0; }
-    return 0; };
+    return 0; 
+  };
 
   // Form candidate
   if(du.width==DistWidth::W32 || du.width==DistWidth::W64){
     uint64_t base_u = du.as_u64_clamped();
-    uint64_t cand64;
-    bool of = add_overflow_u64(base_u, w, cand64);
+    // Fast path: skip overflow check if we know base_u + w <= fastpath_u64_max_sum
+    if(base_u <= st.fastpath_u64_max_sum - w){
+      unsigned __int128 sum = (unsigned __int128)base_u + (unsigned __int128)w;
+      cand128 = sum;
+    } else {
+      uint64_t cand64;
+      bool of = add_overflow_u64(base_u, w, cand64);
     if(of){
 #ifdef ENABLE_DISTANCE_WIDENING
-      if(simulate_oom()){
+  if(simulate_oom()){
 #ifdef ENABLE_BMSSP_VERIFIER
-        st.oom_simulated_events++;
+    st.oom_simulated_events++;
 #endif
-        throw std::runtime_error("Simulated OOM during widening");
-      }
+    throw std::runtime_error("Simulated OOM during widening");
+  }
   // track bytes widened for both endpoints
 #ifdef ENABLE_BMSSP_VERIFIER
   uint64_t u_before = width_bytes(st.dist[su].width);
   uint64_t v_before = width_bytes(st.dist[sv].width);
 #endif
-      widen_word(st.dist[su], DistWidth::W128);
-      widen_word(st.dist[sv], DistWidth::W128);
+  widen_word(st.dist[su], DistWidth::W128);
+  widen_word(st.dist[sv], DistWidth::W128);
 #ifdef ENABLE_BMSSP_VERIFIER
-      st.widen_events++; st.overflow_events++; st.widen_pairs++;
+  st.widen_events++; st.overflow_events++; st.widen_pairs++;
   st.widen_bytes += (width_bytes(st.dist[su].width) - u_before) + (width_bytes(st.dist[sv].width) - v_before);
 #endif
-      if(widened_out) *widened_out=true;
-      cand128 = (unsigned __int128)base_u + w;
+  if(widened_out) *widened_out=true;
+  cand128 = (unsigned __int128)base_u + w;
 #else
   // Widening disabled: signal overflow as an error
   throw std::overflow_error("Distance overflow and widening disabled");
 #endif
     } else {
       cand128 = cand64;
+    }
     }
   } else if(du.width==DistWidth::W128){
     unsigned __int128 base128 = du.small.v128;
@@ -149,12 +156,18 @@ bool relax(DistState& st, int u, int v, uint64_t w, bool allow_equal, bool* wide
     if(!(better || (allow_equal && equal_dist))) return false;
     dv.big = std::move(candBig); dv.width=DistWidth::BIG; st.used_bigint=true;
 #ifdef ENABLE_BMSSP_VERIFIER
-  st.bigint_total_limbs += dv.big.limbs.size();
-  st.big_bytes += dv.big.limbs.size()*8ULL;
+    st.bigint_total_limbs += dv.big.limbs.size();
+    st.big_bytes += dv.big.limbs.size()*8ULL;
 #endif
     int new_hop = (st.hop[su] < std::numeric_limits<int>::max()) ? st.hop[su] + 1 : st.hop[su];
     bool take=true; int old_hop = st.hop[sv];
-    if(!better && equal_dist && allow_equal){ if(new_hop > old_hop) take=false; else if(new_hop==old_hop){ int old_pred = st.pred[sv]; if(!(old_pred<0 || u < old_pred)) take=false; } }
+    if(!better && equal_dist && allow_equal){ 
+      if(new_hop > old_hop) take=false; 
+      else if(new_hop==old_hop){ 
+        int old_pred = st.pred[sv]; 
+        if(!(old_pred<0 || u < old_pred)) take=false; 
+      } 
+    }
     if(!take) return false;
     st.pred[sv]=u; st.hop[sv]=new_hop;
 #ifdef ENABLE_BMSSP_VERIFIER
@@ -190,7 +203,11 @@ bool relax(DistState& st, int u, int v, uint64_t w, bool allow_equal, bool* wide
     int new_hop = (st.hop[su] < std::numeric_limits<int>::max()) ? st.hop[su] + 1 : st.hop[su];
     bool take = better; int old_hop = st.hop[sv];
     if(!take && equal_dist && allow_equal){
-      if(new_hop < old_hop) take = true; else if(new_hop==old_hop){ int old_pred = st.pred[sv]; if(old_pred<0 || u < old_pred) take=true; }
+      if(new_hop < old_hop) take = true; 
+      else if(new_hop==old_hop){ 
+        int old_pred = st.pred[sv]; 
+        if(old_pred<0 || u < old_pred) take=true; 
+      }
     }
     if(!take){
 #ifdef ENABLE_BMSSP_VERIFIER

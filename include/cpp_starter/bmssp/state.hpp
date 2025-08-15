@@ -121,6 +121,10 @@ struct DistState {
   std::vector<uint8_t> complete;
   DistWidth active_width{DistWidth::W64};
   bool used_bigint=false;
+  // Optional fast-path: if enabled via BMSSP_ENABLE_FASTPATH_SAFE_ADD, we can skip
+  // overflow checks when base_u + w is guaranteed <= fastpath_u64_max_sum.
+  // Set this to a safe bound like (n-1)*max_edge_weight for your instance.
+  uint64_t fastpath_u64_max_sum{std::numeric_limits<uint64_t>::max()};
 #ifdef ENABLE_BMSSP_VERIFIER
   // Diagnostics counters (incremented in relax / widening paths)
   uint64_t widen_events=0;

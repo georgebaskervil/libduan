@@ -134,6 +134,11 @@ if(BUILD_TESTING)
   if(ENABLE_BIGINT_FALLBACK)
     target_sources(cpp_starter_tests PRIVATE tests/bigint_relax_test.cpp)
   endif()
+  # Phase 2b tests
+  target_sources(cpp_starter_tests PRIVATE tests/boundary_invariants_test.cpp)
+  if(ENABLE_BMSSP_VERIFIER)
+    target_sources(cpp_starter_tests PRIVATE tests/widen_bench_test.cpp)
+  endif()
   target_link_libraries(cpp_starter_tests PRIVATE
     duansalgorithm::cpp_starter
     GTest::gtest_main

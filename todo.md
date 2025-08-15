@@ -59,11 +59,11 @@ Goal: Replace prototype BMSSP code with a faithful implementation of Algorithms 
 
 ## Phase 2b: Distance Scaling & Reliability (M)
 
-- [ ] Boundary stress tests (2^32, 2^64 edges).
-- [ ] Post-widen invariants (no change to completed vertices).
-- [ ] Benchmark widening overhead.
-- [ ] Fast-path skip overflow checks when safe.
-- [ ] README reliability trade-offs.
+- [x] Boundary stress tests (2^32, 2^64 edges).
+- [x] Post-widen invariants (no change to completed vertices).
+- [x] Benchmark widening overhead.
+- [x] Fast-path skip overflow checks when safe.
+- [x] README reliability trade-offs.
 
 ## Phase 3: Faithful FindPivots (Algorithm 1) (H)
 
@@ -243,6 +243,6 @@ Generated roadmap stored in version control. Update this file as tasks complete.
 
 - Completed phases: 0, 1, 2.
 - Active debugging: none for Phase 2; failure rollback deferred to 2b.
-- Not started: 2b, 3–7, 8, 10–12, 14.
-- Partial: 9 (only widening/BigInt test skeleton), 13 (legacy removal done, cleanup pending).
-- Immediate priorities: fix relax BigInt INF path; implement data structure 𝒟 (Phase 4) to unblock FindPivots (Phase 3); then BaseCase (5) and recursion (6).
+- Not started: 3–7, 8, 10–12, 14.
+- Partial: 2b (bench and README done), 9, 13.
+- Immediate priorities: implement data structure 𝒟 (Phase 4) to unblock FindPivots (Phase 3); then BaseCase (5) and recursion (6).
