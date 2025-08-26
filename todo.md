@@ -67,13 +67,13 @@ Goal: Replace prototype BMSSP code with a faithful implementation of Algorithms 
 
 ## Phase 3: Faithful FindPivots (Algorithm 1) (H)
 
-- [ ] Implement layered relaxation for exactly k iterations (or early termination) with bound B.
-- [ ] Maintain W_i layers; union into W.
-- [ ] Early exit condition: if |W| > k|S| then return P=S, W current.
-- [ ] Build forest F: edges (u,v) where u,v ∈ W and dist[v] == dist[u] + w_uv after final relaxation.
-- [ ] Compute subtree sizes in F for each root in S; mark pivots where subtree size ≥ k.
-- [ ] Return (P,W); ensure P ⊆ S, |P| ≤ |W|/k.
-- [ ] Instrumentation asserts: |W| ≤ min(k|S|, |U~|) when no early exit.
+- [x] Implement layered relaxation for exactly k iterations (or early termination) with bound B.
+- [x] Maintain W_i layers; union into W.
+- [x] Early exit condition: if |W| > k|S| then return P=S, W current.
+- [x] Build forest F: edges (u,v) where u,v ∈ W and dist[v] == dist[u] + w_uv after final relaxation.
+- [x] Compute subtree sizes in F for each root in S; mark pivots where subtree size ≥ k.
+- [x] Return (P,W); ensure P ⊆ S, |P| ≤ |W|/k. (Trim safeguard if over)
+- [~] Instrumentation asserts: |W| ≤ k|S| when no early exit. (|U~| bound requires later context)
 
 ## Phase 4: Data Structure 𝒟 (Lemma 3.3) (H)
 

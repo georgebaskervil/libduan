@@ -54,6 +54,7 @@ add_library(cpp_starter
   src/lib.cpp
   src/bmssp_algo.cpp
   src/bmssp_state.cpp
+  src/find_pivots.cpp
 )
 add_library(duansalgorithm::cpp_starter ALIAS cpp_starter)
 
