@@ -95,13 +95,15 @@ Notes (current): Implemented a correct, simple 𝒟 using a min-heap plus best-v
 
 ## Phase 5: BaseCase (Algorithm 2) (M)
 
-- [ ] Preconditions: |S| == 1, source x is complete.
-- [ ] Mini Dijkstra limited by bound B; heap keyed by dist.
-- [ ] Stop when heap empty OR collected k+1 vertices.
-- [ ] If collected ≤ k: B' = B; U = U0.
-- [ ] Else B' = max dist in U0; U = {v ∈ U0 | dist[v] < B'}.
-- [ ] Mark all U vertices complete.
-- [ ] Assert invariants.
+- [x] Preconditions: |S| == 1, source x is complete. (asserts under ENABLE_BMSSP_VERIFIER)
+- [x] Mini Dijkstra limited by bound B; heap keyed by dist.
+- [x] Stop when heap empty OR collected k+1 vertices.
+- [x] If collected ≤ k: B' = B; U = U0.
+- [x] Else B' = max dist in U0; U = {v ∈ U0 | dist[v] < B'}.
+- [x] Mark all U vertices complete.
+- [x] Assert invariants. (enabled when ENABLE_BMSSP_VERIFIER)
+
+Notes: Implemented in `src/base_case.cpp` using DistWord-aware comparisons; returns `{boundary, U}` and marks U complete. Preconditions and invariants are asserted when verifier is enabled.
 
 ## Phase 6: Recursive BMSSP (Algorithm 3) (H)
 
@@ -124,6 +126,8 @@ Notes (current): Implemented a correct, simple 𝒟 using a min-heap plus best-v
   - After loop add W' = {x∈W | dist[x] < B'} to U.
   - Assert: success vs partial conditions & size bounds (Lemma 3.9).
 - [ ] Return (B', U).
+
+Notes (current): `src/bmssp.cpp` provides scaffolding that delegates to BaseCase for now; replace with full Algorithm 3 in this phase.
 
 ## Phase 7: Top-Level SSSP Driver (M)
 
@@ -241,10 +245,10 @@ Generated roadmap stored in version control. Update this file as tasks complete.
 
 ---
 
-## Current Progress Snapshot (2025-08-15)
+## Current Progress Snapshot (2025-08-26)
 
-- Completed phases: 0, 1, 2.
+- Completed phases: 0, 1, 2. Phase 4 ops implemented (simple 𝒟). Phase 5 core logic implemented.
 - Active debugging: none for Phase 2; failure rollback deferred to 2b.
-- Not started: 3–7, 8, 10–12, 14.
-- Partial: 2b (bench and README done), 9, 13.
-- Immediate priorities: implement data structure 𝒟 (Phase 4) to unblock FindPivots (Phase 3); then BaseCase (5) and recursion (6).
+- Not started: 6–7, 8, 10–12, 14.
+- Partial: 2b (bench and README done), 3 (notes), 4 (block layout/instrumentation), 5 (asserts), 9, 13.
+- Immediate priorities: Phase 6 (BMSSP recursion with 𝒟), add BaseCase invariants asserts, then recursive tests.

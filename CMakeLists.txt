@@ -53,6 +53,8 @@ endfunction()
 add_library(cpp_starter
   src/lib.cpp
   src/bmssp_algo.cpp
+  src/base_case.cpp
+  src/bmssp.cpp
   src/bmssp_state.cpp
   src/find_pivots.cpp
   src/structure.cpp
