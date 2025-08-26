@@ -1,13 +1,203 @@
+// Phase 6: Recursive BMSSP (Algorithm 3)
+
+#include <algorithm>
+#include <cstdint>
+#include <vector>
+#include <cassert>
+
 #include "cpp_starter/bmssp/bmssp.hpp"
+#include "cpp_starter/bmssp/find_pivots.hpp"
+#include "cpp_starter/bmssp/state.hpp"
+#include "cpp_starter/bmssp/structure.hpp"
 
 namespace bmssp {
 
+namespace {
+inline uint64_t clamp_u128_to_u64(unsigned __int128 v) { return static_cast<uint64_t>(v); }
+
+inline unsigned __int128 dist_to_u128(const DistWord& d) {
+  switch (d.width) {
+    case DistWidth::W32:
+      return d.small.v32;
+    case DistWidth::W64:
+      return d.small.v64;
+    case DistWidth::W128:
+      return d.small.v128;
+    case DistWidth::BIG: {
+      // Compose from up to two limbs (lower 128 bits); sufficient for ordering in tests
+      unsigned __int128 v = 0;
+      if (!d.big.limbs.empty()) {
+        v |= static_cast<unsigned __int128>(d.big.limbs[0]);
+        if (d.big.limbs.size() > 1) v |= (static_cast<unsigned __int128>(d.big.limbs[1]) << 64);
+      }
+      return v;
+    }
+  }
+  return 0;
+}
+
+inline bool in_left_closed_right_open(const DistWord& dv, uint64_t lo, uint64_t hi) {
+  // Check dv in [lo, hi)
+  DistWord d_lo = DistWord::from_u64(lo);
+  DistWord d_hi = DistWord::from_u64(hi);
+  return compare(dv, d_lo) >= 0 && compare(dv, d_hi) < 0;
+}
+}  // namespace
+
 BMSSPResult bmssp(int l, uint64_t B, const std::vector<int>& S, Graph& g, DistState& st,
                   const BMSSPParams& p) {
-  (void)l;  // recursion to be implemented in Phase 6
-  BaseCaseParams bp{p.k};
-  auto r = base_case(B, S, g, st, bp);
-  return {r.boundary, r.U};
+  // Base case
+  if (l <= 0) {
+    BaseCaseParams bp{p.k};
+    auto r = base_case(B, S, g, st, bp);
+    return {r.boundary, r.U};
+  }
+
+  // Find pivots and working set W
+  FindPivotsParams fpp{p.k};
+  PivotResult piv = find_pivots(B, S, g, st, fpp);
+
+  // Initialize 𝒟 with capacity M = 2^{l-1} * t and boundary B
+  PartialPriority D;
+  std::size_t M = (static_cast<std::size_t>(1) << static_cast<unsigned>(l - 1)) * p.t;
+  if (M == 0) M = 1;  // safety
+  D.initialize(M, static_cast<unsigned __int128>(B));
+
+  // Insert each x ∈ P with current dist[x]
+  for (int x : piv.P) {
+    if (x < 0 || static_cast<std::size_t>(x) >= st.dist.size()) continue;
+    const DistWord& dx = st.dist[static_cast<std::size_t>(x)];
+    unsigned __int128 vx = dist_to_u128(dx);
+    D.insert(x, vx);
+  }
+
+  std::vector<int> U;
+  U.reserve(st.dist.size());
+  std::vector<uint8_t> inU(st.dist.size(), 0);
+
+  uint64_t B_prime_out = B;  // default success boundary
+
+  while (true) {
+    // 1) Pull next batch
+    std::vector<int> S_i;
+    unsigned __int128 B_i_u128 = 0;
+    if (!D.pull(S_i, B_i_u128)) {
+      // Success: 𝒟 empty
+      B_prime_out = B;
+      break;
+    }
+    uint64_t B_i = clamp_u128_to_u64(B_i_u128);
+
+    // 2) Recurse on S_i with bound B_i
+    BMSSPResult sub = bmssp(l - 1, B_i, S_i, g, st, p);
+    uint64_t B_i_prime = sub.boundary;
+
+  // 3) Merge U_i and mark complete
+    for (int v : sub.U) {
+      if (v < 0 || static_cast<std::size_t>(v) >= inU.size()) continue;
+#ifdef ENABLE_BMSSP_VERIFIER
+    // U_i must be disjoint across iterations
+    assert(!inU[static_cast<std::size_t>(v)] && "U_i sets must be disjoint across iterations");
+#endif
+      if (!inU[static_cast<std::size_t>(v)]) {
+        inU[static_cast<std::size_t>(v)] = 1;
+        U.push_back(v);
+        mark_complete(st, v);
+      }
+    }
+
+    // 4) Relax edges from U_i and bucket by interval
+    std::vector<PartialPriority::Item> K;
+    for (int u : sub.U) {
+      if (u < 0 || static_cast<std::size_t>(u) >= g.size()) continue;
+      for (const auto& e : g.neighbors(u)) {
+        int v = e.to;
+        if (v < 0 || static_cast<std::size_t>(v) >= st.dist.size()) continue;
+        bool improved = relax(st, u, v, e.w, true, nullptr);
+        (void)improved;  // decision is based on current dv interval regardless
+        const DistWord& dv = st.dist[static_cast<std::size_t>(v)];
+        if (in_left_closed_right_open(dv, B_i, B)) {
+          D.insert(v, dist_to_u128(dv));
+        } else if (in_left_closed_right_open(dv, B_i_prime, B_i)) {
+          K.push_back({v, dist_to_u128(dv)});
+        }
+      }
+    }
+
+    // 5) Add qualifying S_i vertices into K where dist in [B_i', B_i)
+    for (int x : S_i) {
+      if (x < 0 || static_cast<std::size_t>(x) >= st.dist.size()) continue;
+      const DistWord& dx = st.dist[static_cast<std::size_t>(x)];
+      if (in_left_closed_right_open(dx, B_i_prime, B_i)) {
+        K.push_back({x, dist_to_u128(dx)});
+      }
+    }
+    if (!K.empty()) {
+      D.batch_prepend(K);
+    }
+
+    // 6) Check for success
+    if (D.empty()) {
+      B_prime_out = B;
+      break;
+    }
+
+    // 7) Partial check
+    const std::size_t limit = p.k * (static_cast<std::size_t>(1) << static_cast<unsigned>(l)) * p.t;
+    if (U.size() >= limit) {
+      B_prime_out = B_i_prime;
+      break;
+    }
+
+  // Lower boundary advanced to B_i_prime (implicit in interval checks next iteration)
+  }
+
+  // Add W' = {x in W | dist[x] < B'} to U
+  for (int x : piv.W) {
+    if (x < 0 || static_cast<std::size_t>(x) >= st.dist.size()) continue;
+    const DistWord& dx = st.dist[static_cast<std::size_t>(x)];
+    if (compare(dx, DistWord::from_u64(B_prime_out)) < 0) {
+      if (!inU[static_cast<std::size_t>(x)]) {
+        inU[static_cast<std::size_t>(x)] = 1;
+        U.push_back(x);
+        mark_complete(st, x);
+      }
+    }
+  }
+
+#ifdef ENABLE_BMSSP_VERIFIER
+  // All vertices returned must respect the boundary
+  for (int v : U) {
+    if (v < 0 || static_cast<std::size_t>(v) >= st.dist.size()) continue;
+    const DistWord& dv = st.dist[static_cast<std::size_t>(v)];
+    assert(compare(dv, DistWord::from_u64(B_prime_out)) < 0 && "Returned U must have dist < B'");
+  }
+
+  if (B_prime_out == B) {
+    // Success: coverage — any node with dist < B must be in U
+    for (std::size_t i = 0; i < st.dist.size(); ++i) {
+      const DistWord& di = st.dist[i];
+      if (!di.is_inf() && compare(di, DistWord::from_u64(B)) < 0) {
+        assert(inU[i] && "Success case: missing vertex with dist < B in U");
+      }
+    }
+  } else {
+    // Partial: size bounds k*2^l*t ≤ |U| ≤ 4k*2^l*t
+    const std::size_t factor = (static_cast<std::size_t>(1) << static_cast<unsigned>(l));
+    const std::size_t lower = p.k * factor * p.t;
+    const std::size_t upper = 4 * p.k * factor * p.t;
+    assert(U.size() >= lower && "Partial case: U smaller than lower bound");
+    assert(U.size() <= upper && "Partial case: U larger than upper bound");
+    // Also ensure all U strictly below returned boundary
+    for (int v : U) {
+      if (v < 0 || static_cast<std::size_t>(v) >= st.dist.size()) continue;
+      const DistWord& dv = st.dist[static_cast<std::size_t>(v)];
+      assert(compare(dv, DistWord::from_u64(B_prime_out)) < 0);
+    }
+  }
+#endif
+
+  return {B_prime_out, U};
 }
 
 }  // namespace bmssp

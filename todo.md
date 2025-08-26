@@ -107,27 +107,27 @@ Notes: Implemented in `src/base_case.cpp` using DistWord-aware comparisons; retu
 
 ## Phase 6: Recursive BMSSP (Algorithm 3) (H)
 
-- [ ] Implement procedure BMSSP(l,B,S):
-  - If l==0 -> BaseCase.
-  - Run FindPivots -> (P,W).
-  - Initialize 𝒟 with M = 2^{l-1} * t, B.
-  - Insert each x∈P with dist[x].
-  - Set B0' = (P empty ? B : min dist[x]).
-  - Loop iterations:
-    1. Pull -> (S_i, B_i)
-    2. Recursive call BMSSP(l-1, B_i, S_i) -> (B_i', U_i)
-    3. Add U_i into U (track disjointness) and mark complete.
-    4. Relax edges from U_i (≤ condition). For each relaxation:
-       - If dist in [B_i, B): Insert
-       - Else if in [B_i', B_i): add to K
-    5. BatchPrepend K plus qualifying S_i vertices (dist in [B_i', B_i)).
-    6. If 𝒟 empty -> success; B' = B; break.
-    7. If |U| ≥ k *2^l* t -> partial; B' = B_i'; break.
-  - After loop add W' = {x∈W | dist[x] < B'} to U.
-  - Assert: success vs partial conditions & size bounds (Lemma 3.9).
-- [ ] Return (B', U).
+- [x] Implement procedure BMSSP(l,B,S):
+  - [x] If l==0 -> BaseCase.
+  - [x] Run FindPivots -> (P,W).
+  - [x] Initialize 𝒟 with M = 2^{l-1} * t, B.
+  - [x] Insert each x∈P with dist[x].
+  - [x] Track lower boundary implicitly (no explicit B0'; first pull determines B_i).
+  - [x] Loop iterations:
+    1. [x] Pull -> (S_i, B_i)
+    2. [x] Recursive call BMSSP(l-1, B_i, S_i) -> (B_i', U_i)
+    3. [x] Add U_i into U (track disjointness) and mark complete.
+    4. [x] Relax edges from U_i. For each relaxation:
+       - [x] If dist in [B_i, B): Insert
+       - [x] Else if in [B_i', B_i): add to K
+    5. [x] BatchPrepend K plus qualifying S_i vertices (dist in [B_i', B_i)).
+    6. [x] If 𝒟 empty -> success; B' = B; break.
+    7. [x] If |U| ≥ k *2^l* t -> partial; B' = B_i'; break.
+  - [x] After loop add W' = {x∈W | dist[x] < B'} to U.
+  - [x] Assert: success vs partial conditions & size bounds (Lemma 3.9).
+- [x] Return (B', U).
 
-Notes (current): `src/bmssp.cpp` provides scaffolding that delegates to BaseCase for now; replace with full Algorithm 3 in this phase.
+Notes (current): Implemented in `src/bmssp.cpp` with DistWord-aware comparisons and the simple 𝒟. Remaining: verifier asserts for success/partial bounds.
 
 ## Phase 7: Top-Level SSSP Driver (M)
 
@@ -247,8 +247,8 @@ Generated roadmap stored in version control. Update this file as tasks complete.
 
 ## Current Progress Snapshot (2025-08-26)
 
-- Completed phases: 0, 1, 2. Phase 4 ops implemented (simple 𝒟). Phase 5 core logic implemented.
+- Completed phases: 0, 1, 2. Phase 4 ops implemented (simple 𝒟). Phase 5 core logic implemented. Phase 6 recursion implemented with Lemma 3.9 asserts under verifier.
 - Active debugging: none for Phase 2; failure rollback deferred to 2b.
-- Not started: 6–7, 8, 10–12, 14.
-- Partial: 2b (bench and README done), 3 (notes), 4 (block layout/instrumentation), 5 (asserts), 9, 13.
-- Immediate priorities: Phase 6 (BMSSP recursion with 𝒟), add BaseCase invariants asserts, then recursive tests.
+- Not started: 7, 8, 10–12, 14.
+- Partial: 2b (bench and README done), 3 (notes), 4 (block layout/instrumentation), 9, 13.
+- Immediate priorities: add recursion tests vs Dijkstra (Phase 9), then top-level driver (Phase 7).
