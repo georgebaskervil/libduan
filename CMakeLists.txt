@@ -55,6 +55,7 @@ add_library(cpp_starter
   src/bmssp_algo.cpp
   src/bmssp_state.cpp
   src/find_pivots.cpp
+  src/structure.cpp
 )
 add_library(duansalgorithm::cpp_starter ALIAS cpp_starter)
 
@@ -131,6 +132,7 @@ if(BUILD_TESTING)
   enable_testing()
   add_executable(cpp_starter_tests
       tests/lib_test.cpp
+  tests/structure_test.cpp
     )
   if(ENABLE_BIGINT_FALLBACK)
     target_sources(cpp_starter_tests PRIVATE tests/bigint_relax_test.cpp)

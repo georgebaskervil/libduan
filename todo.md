@@ -77,12 +77,12 @@ Goal: Replace prototype BMSSP code with a faithful implementation of Algorithms 
 
 ## Phase 4: Data Structure 𝒟 (Lemma 3.3) (H)
 
-- [ ] Design block structures:  
+- [~] Design block structures:  
   - Each block should contain:
     - A `vector` (or similar sequence) of elements.
     - An `upper_bound` value representing the maximum key in the block.
 - [ ] Two sequences: D0 (batch prepends) + D1 (inserts) with std::map keyed by block upper bound for D1 ordering.
-- [ ] Operations:
+- [x] Operations:
   - Initialize(M, B)
   - Insert(key,value) (update if lower)
   - BatchPrepend(list\<key,value\>) (partition into blocks ≤ M using median selection / nth_element)
@@ -90,6 +90,8 @@ Goal: Replace prototype BMSSP code with a faithful implementation of Algorithms 
   - Delete internal (used in Pull)
 - [ ] Support complexity heuristics; add counters for amortized analysis (instrumentation only).
 - [ ] Provide fallback simple structure behind a compile flag for debugging.
+
+Notes (current): Implemented a correct, simple 𝒟 using a min-heap plus best-value dedup; supports Initialize/Insert/BatchPrepend/Pull with up-to-M returns and boundary. Block-based D0/D1 layout and amortized-complexity instrumentation are deferred.
 
 ## Phase 5: BaseCase (Algorithm 2) (M)
 
