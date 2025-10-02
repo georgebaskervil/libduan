@@ -33,6 +33,9 @@ class PartialPriorityImpl {
   }
 
   void insert(int key, unsigned __int128 value) {
+#ifdef ENABLE_BMSSP_VERIFIER
+    insert_count++;
+#endif
     auto it = best_.find(key);
     if (it != best_.end()) {
       if (value >= it->second) return;  // not an improvement
@@ -45,6 +48,9 @@ class PartialPriorityImpl {
   }
 
   void batch_prepend(std::vector<PartialPriority::Item>& batch) {
+#ifdef ENABLE_BMSSP_VERIFIER
+    batch_prepend_count++;
+#endif
     if (batch.empty()) return;
     // Apply decrease-key filtering against best_ and collect survivors
     std::vector<PartialPriority::Item> filtered;
@@ -69,6 +75,9 @@ class PartialPriorityImpl {
   }
 
   bool pull(std::vector<int>& out_keys, unsigned __int128& boundary) {
+#ifdef ENABLE_BMSSP_VERIFIER
+    pull_count++;
+#endif
     out_keys.clear();
     // Fast check: if no live keys, return false
     if (best_.empty()) return false;
@@ -127,6 +136,13 @@ class PartialPriorityImpl {
     }
   };
   std::priority_queue<PartialPriority::Item, std::vector<PartialPriority::Item>, Cmp> heap_;
+
+#ifdef ENABLE_BMSSP_VERIFIER
+ public:
+  uint64_t insert_count = 0;
+  uint64_t batch_prepend_count = 0;
+  uint64_t pull_count = 0;
+#endif
 };
 
 // Thin wrappers mapping header API to the implementation class, without exposing it in the header

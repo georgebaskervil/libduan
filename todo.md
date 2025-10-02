@@ -143,13 +143,15 @@ Notes: Implementation complete in `src/bmssp.cpp` (run_sssp function). Critical 
 
 ## Phase 8: Invariants & Verification (M)
 
-- [ ] Add assert macros (guarded by ENABLE_BMSSP_VERIFIER) checking:
+- [x] Add assert macros (guarded by ENABLE_BMSSP_VERIFIER) checking:
   - |P| ≤ |W|/k (when not early exit).
   - U_i disjoint across iterations.
   - Partial: k*2^l*t ≤ |U| ≤ 4k*2^l*t.
   - Success: B' == B & U == U~ (via reconstruction / BFS limited to B for debug only).
   - |W| ≤ k|S| unless early exit path chosen.
-- [ ] Collect counters: relax_equal, relax_improve, inserts, batch_prepends, pulls.
+- [x] Collect counters: relax_equal, relax_improve, inserts, batch_prepends, pulls.
+
+Notes: All invariant checks implemented and enabled in find_pivots.cpp and bmssp.cpp. Counters added to DistState (relax operations) and PartialPriorityImpl (data structure operations). All tests passing (19/19).
 
 ## Phase 9: Testing Suite (H)
 

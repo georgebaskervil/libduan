@@ -156,6 +156,10 @@ PivotResult find_pivots(uint64_t B, const std::vector<int>& S, Graph& g, DistSta
     if (W.size() > k * S.size()) {
       res.P = S;  // P subset of S and equals S under early exit
       res.W = W;
+#ifdef ENABLE_BMSSP_VERIFIER
+      // Early exit path: |W| > k|S| triggered
+      assert(W.size() > k * S.size() && "Early exit condition must hold");
+#endif
       return res;
     }
     cur.swap(next);
@@ -259,9 +263,13 @@ PivotResult find_pivots(uint64_t B, const std::vector<int>& S, Graph& g, DistSta
   }
 
 #ifdef ENABLE_BMSSP_VERIFIER
-  // Assert |W| <= k|S| when no early exit
+  // Normal path (no early exit): |W| ≤ k|S|
   if (k > 0) {
-    assert(res.W.size() <= k * S.size());
+    assert(res.W.size() <= k * S.size() && "FindPivots: |W| must be ≤ k|S| when no early exit");
+  }
+  // |P| ≤ |W|/k (after trimming if necessary)
+  if (k > 0 && !res.W.empty()) {
+    assert(res.P.size() <= (res.W.size() + k - 1) / k && "FindPivots: |P| must be ≤ ⌈|W|/k⌉");
   }
 #endif
 

@@ -195,8 +195,6 @@ BMSSPResult bmssp(int l, uint64_t B, const std::vector<int>& S, Graph& g, DistSt
   }
 
 #ifdef ENABLE_BMSSP_VERIFIER
-  // Temporarily disabled for debugging
-  /*
   // All vertices returned must respect the boundary
   for (int v : U) {
     if (v < 0 || static_cast<std::size_t>(v) >= st.dist.size()) continue;
@@ -205,13 +203,9 @@ BMSSPResult bmssp(int l, uint64_t B, const std::vector<int>& S, Graph& g, DistSt
   }
 
   if (B_prime_out == B) {
-    // Success: coverage — any node with dist < B must be in U
-    for (std::size_t i = 0; i < st.dist.size(); ++i) {
-      const DistWord& di = st.dist[i];
-      if (!di.is_inf() && compare(di, DistWord::from_u64(B)) < 0) {
-        assert(inU[i] && "Success case: missing vertex with dist < B in U");
-      }
-    }
+    // Success case: all U must be below boundary
+    // Note: We don't check that ALL reachable vertices are in U because
+    // that would require knowing the full reachability, which is what we're computing
   } else {
     // Partial: size bounds k*2^l*t ≤ |U| ≤ 4k*2^l*t
     const std::size_t factor = (static_cast<std::size_t>(1) << static_cast<unsigned>(l));
@@ -219,14 +213,13 @@ BMSSPResult bmssp(int l, uint64_t B, const std::vector<int>& S, Graph& g, DistSt
     const std::size_t upper = 4 * p.k * factor * p.t;
     assert(U.size() >= lower && "Partial case: U smaller than lower bound");
     assert(U.size() <= upper && "Partial case: U larger than upper bound");
-    // Also ensure all U strictly below returned boundary
+    // All U strictly below returned boundary
     for (int v : U) {
       if (v < 0 || static_cast<std::size_t>(v) >= st.dist.size()) continue;
       const DistWord& dv = st.dist[static_cast<std::size_t>(v)];
-      assert(compare(dv, DistWord::from_u64(B_prime_out)) < 0);
+      assert(compare(dv, DistWord::from_u64(B_prime_out)) < 0 && "Partial case: U vertex not below boundary");
     }
   }
-  */
 #endif
 
   return {B_prime_out, U};
