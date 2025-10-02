@@ -168,9 +168,11 @@ Notes: Comprehensive test suite implemented with 37 tests covering all major alg
 
 ## Phase 10: Performance & Instrumentation (M)
 
-- [ ] Benchmark harness (optional) measuring inserts per vertex, relax per edge.
-- [ ] Dump stats (when enabled) summarizing amortized costs.
-- [ ] Validate no edge inserted twice via Insert (track seen per level).
+- [x] Benchmark harness (optional) measuring inserts per vertex, relax per edge.
+- [x] Dump stats (when enabled) summarizing amortized costs.
+- [x] Validate no edge inserted twice via Insert (track seen per level).
+
+Notes: Added comprehensive instrumentation system. Stats dumping function (dump_stats) reports relax operations, widening events, and computes ratios like relax per edge, improvements per vertex. Edge tracking validates that no edge is inserted twice at the same recursion level (key assumption for amortized analysis). All tests passing (39/39). Instrumentation only active when ENABLE_BMSSP_VERIFIER is defined (zero overhead otherwise).
 
 ## Phase 11: Constant-Degree Transform (opt, L)
 

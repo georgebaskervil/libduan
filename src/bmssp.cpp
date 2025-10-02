@@ -7,6 +7,7 @@
 #include <cmath>
 #include <limits>
 #include <iostream>  // for debug output
+#include <unordered_set>
 
 #include "cpp_starter/bmssp/bmssp.hpp"
 #include "cpp_starter/bmssp/find_pivots.hpp"
@@ -57,6 +58,14 @@ BMSSPResult bmssp(int l, uint64_t B, const std::vector<int>& S, Graph& g, DistSt
     // std::cerr << "[DEBUG] base_case returned boundary=" << r.boundary << " |U|=" << r.U.size() << std::endl;
     return {r.boundary, r.U};
   }
+
+#ifdef ENABLE_BMSSP_VERIFIER
+  // Track edges inserted into D at this level (for amortized analysis validation)
+  std::unordered_set<uint64_t> inserted_edges;  // encode (u,v) as (u << 32) | v
+  auto encode_edge = [](int u, int v) -> uint64_t {
+    return (static_cast<uint64_t>(static_cast<uint32_t>(u)) << 32) | static_cast<uint32_t>(v);
+  };
+#endif
 
   // Find pivots and working set W
   FindPivotsParams fpp{p.k};
@@ -136,6 +145,12 @@ BMSSPResult bmssp(int l, uint64_t B, const std::vector<int>& S, Graph& g, DistSt
         const DistWord& dv = st.dist[static_cast<std::size_t>(v)];
         if (in_left_closed_right_open(dv, B_i, B)) {
           insert_count++;
+#ifdef ENABLE_BMSSP_VERIFIER
+          uint64_t edge_key = encode_edge(u, v);
+          assert(inserted_edges.find(edge_key) == inserted_edges.end() &&
+                 "Edge inserted twice at same level (violates amortized analysis)");
+          inserted_edges.insert(edge_key);
+#endif
           D.insert(v, dist_to_u128(dv));
         } else if (in_left_closed_right_open(dv, B_i_prime, B_i)) {
           k_count++;
