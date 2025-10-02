@@ -2,6 +2,7 @@
 
 #include <queue>
 #include <vector>
+#include <random>
 
 #include "cpp_starter/bmssp/bmssp.hpp"
 #include "cpp_starter/bmssp/graph.hpp"
@@ -48,36 +49,12 @@ static void run_case(std::size_t n, int seed) {
   int s = 0;
   auto ref = dijkstra_ref(g, s);
 
-  DistState st; st.reset(n);
-  initialize_source(st, s);
+  // Use the public run_sssp API which auto-computes correct parameters
+  auto got = run_sssp(g, s);
 
-  // Parameters: small k,t and few levels for tiny graphs
-  std::size_t k = std::max<std::size_t>(1, static_cast<std::size_t>(std::cbrt(std::max<std::size_t>(n,1)))) ;
-  std::size_t t = std::max<std::size_t>(1, static_cast<std::size_t>(std::sqrt(std::max<std::size_t>(n,1)))) ;
-  int l = 2;
-  BMSSPParams p{ k, t, l };
-
-  std::vector<int> S = { s };
-  uint64_t B = std::numeric_limits<uint64_t>::max();
-  BMSSPResult r = bmssp(l, B, S, g, st, p);
-
-  // Collect distances for vertices we completed (U plus W' already added by bmssp)
-  std::vector<uint64_t> got(n, std::numeric_limits<uint64_t>::max());
-  for (std::size_t i=0;i<n;++i) {
-    if (!st.dist[i].is_inf()) {
-      if (st.complete[i]) got[i] = st.dist[i].as_u64_clamped();
-    }
-  }
-
-  for (std::size_t i=0; i<n; ++i) {
-    // When bmssp succeeds fully, we expect exact match; on partial, all discovered (< boundary) must match
-    if (r.boundary == B) {
-      EXPECT_EQ(got[i], ref[i]) << "vertex " << i;
-    } else {
-      if (got[i] != std::numeric_limits<uint64_t>::max() && got[i] < r.boundary) {
-        EXPECT_EQ(got[i], ref[i]) << "vertex " << i;
-      }
-    }
+  ASSERT_EQ(got.size(), n);
+  for (std::size_t i = 0; i < n; ++i) {
+    EXPECT_EQ(got[i], ref[i]) << "seed=" << seed << " n=" << n << " vertex=" << i;
   }
 }
 

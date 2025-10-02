@@ -23,4 +23,8 @@ struct BMSSPResult {
 BMSSPResult bmssp(int l, uint64_t B, const std::vector<int>& S, Graph& g, DistState& st,
                   const BMSSPParams& p);
 
+// Top-level SSSP driver: auto-computes parameters and runs BMSSP
+// Returns distance vector for all vertices from source s
+std::vector<uint64_t> run_sssp(const Graph& g, int source);
+
 }  // namespace bmssp

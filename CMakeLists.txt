@@ -135,6 +135,8 @@ if(BUILD_TESTING)
   add_executable(cpp_starter_tests
       tests/lib_test.cpp
   tests/structure_test.cpp
+  tests/recursion_against_dijkstra_test.cpp
+  tests/sssp_driver_test.cpp
     )
   if(ENABLE_BIGINT_FALLBACK)
     target_sources(cpp_starter_tests PRIVATE tests/bigint_relax_test.cpp)
