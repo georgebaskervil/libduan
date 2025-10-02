@@ -26,6 +26,7 @@ option(ENABLE_JEMALLOC "Link against jemalloc if available" ON)
 option(ENABLE_GLOBAL_JEMALLOC "Override global new/delete using jemalloc" OFF)
 option(ENABLE_JEMALLOC_DIAGNOSTICS "Print jemalloc version at startup (noisy)" OFF)
 option(ENABLE_BMSSP_VERIFIER "Enable BMSSP invariant checking and verbose stats" OFF)
+option(CONST_DEGREE_STRICT_MODE "Abort if input graph degree > 2 (requires ENABLE_BMSSP_VERIFIER)" OFF)
 set(MIN_DISTANCE_BITS "64" CACHE STRING "Minimum distance bit width for BMSSP distances (32 or 64)")
 set_property(CACHE MIN_DISTANCE_BITS PROPERTY STRINGS 32 64)
 option(ENABLE_DISTANCE_WIDENING "Allow automatic distance widening on overflow" ON)
@@ -59,6 +60,7 @@ add_library(cpp_starter
   src/find_pivots.cpp
   src/structure.cpp
   src/instrumentation.cpp
+  src/degree_check.cpp
 )
 add_library(duansalgorithm::cpp_starter ALIAS cpp_starter)
 
@@ -73,6 +75,9 @@ target_compile_features(cpp_starter PUBLIC cxx_std_20)
 enable_project_warnings(cpp_starter)
 if(ENABLE_BMSSP_VERIFIER)
   target_compile_definitions(cpp_starter PUBLIC ENABLE_BMSSP_VERIFIER)
+endif()
+if(CONST_DEGREE_STRICT_MODE)
+  target_compile_definitions(cpp_starter PUBLIC CONST_DEGREE_STRICT_MODE)
 endif()
 target_compile_definitions(cpp_starter PUBLIC
   MIN_DISTANCE_BITS=${MIN_DISTANCE_BITS}
@@ -143,6 +148,7 @@ if(BUILD_TESTING)
   tests/partial_execution_test.cpp
   tests/tie_breaking_test.cpp
   tests/instrumentation_test.cpp
+  tests/degree_check_test.cpp
     )
   if(ENABLE_BIGINT_FALLBACK)
     target_sources(cpp_starter_tests PRIVATE tests/bigint_relax_test.cpp)

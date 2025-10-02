@@ -13,6 +13,7 @@
 #include "cpp_starter/bmssp/find_pivots.hpp"
 #include "cpp_starter/bmssp/state.hpp"
 #include "cpp_starter/bmssp/structure.hpp"
+#include "cpp_starter/bmssp/degree_check.hpp"
 
 namespace bmssp {
 
@@ -249,6 +250,11 @@ std::vector<uint64_t> run_sssp(const Graph& g, int source) {
     const uint64_t INF = std::numeric_limits<uint64_t>::max() / 4;
     return std::vector<uint64_t>(n, INF);
   }
+
+#ifdef ENABLE_BMSSP_VERIFIER
+  // Validate degree constraint for paper's complexity bound
+  validate_degree_constraint(g);
+#endif
 
   // Auto-compute parameters: k = floor(log^{1/3} n), t = floor(log^{2/3} n), l_max = ceil(log n / t)
   // Use std::log for natural log; ensure k,t ≥ 1
