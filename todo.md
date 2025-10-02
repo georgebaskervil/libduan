@@ -154,7 +154,7 @@ Notes (current): Implemented in `src/bmssp.cpp` with DistWord-aware comparisons 
 - [ ] Data structure 𝒟 unit tests (Insert / BatchPrepend / Pull).
 - [ ] FindPivots size bounds & synthetic pivot selection.
 - [ ] BaseCase k / k+1 threshold behavior.
-- [ ] BMSSP recursion vs Dijkstra (small graphs).
+- [x] BMSSP recursion vs Dijkstra (small graphs). (tests/recursion_against_dijkstra_test.cpp)
 - [ ] Random constant-degree graphs vs Dijkstra (parameterized seeds/sizes).
 - [ ] Partial execution scenario tests.
 - [ ] Equal-distance multi-path tie-handling.
