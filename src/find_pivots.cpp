@@ -1,8 +1,28 @@
-// Phase 3: Faithful-ish FindPivots (Algorithm 1) implementation
-// - Layered relaxations for exactly k iterations or until frontier exhausts
-// - Maintains W_i layers and their union W (including S)
-// - Early exit if |W| > k |S| returning P=S
-// - Builds shortest-path forest over tight edges within W and selects pivots
+// ============================================================================
+// Phase 3: FindPivots (Algorithm 1 from paper)
+// ============================================================================
+//
+// Paper Reference: "Breaking the Sorting Barrier for Directed Single-Source 
+//                   Shortest Paths" (arXiv:2504.17033), Algorithm 1
+//
+// Purpose: Given a set S of source vertices and a boundary B, perform layered
+//          relaxation to identify pivot vertices P ⊆ S and a working set W.
+//
+// Algorithm Overview (Algorithm 1):
+//   1. Initialize W_0 = S
+//   2. For i = 1 to k (or until W_i empty):
+//      - W_i = {v | ∃u ∈ W_{i-1}, (u,v) ∈ E, dist[v] improved and dist[v] < B}
+//      - W = W ∪ W_i
+//      - Early exit: if |W| > k|S| return P=S, W
+//   3. Build shortest-path forest F over tight edges in W
+//   4. For each root x ∈ S, compute subtree size
+//   5. P = {x ∈ S | subtree size ≥ k}
+//
+// Invariants (Lemma 3.5):
+//   - |P| ≤ |W|/k (after trimming if necessary)
+//   - |W| ≤ k|S| (unless early exit triggered)
+//
+// ============================================================================
 
 #include <algorithm>
 #include <cassert>

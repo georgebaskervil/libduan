@@ -1,4 +1,43 @@
-// Phase 6: Recursive BMSSP (Algorithm 3)
+// ============================================================================
+// Phase 6: BMSSP (Algorithm 3 from paper)
+// ============================================================================
+//
+// Paper Reference: "Breaking the Sorting Barrier for Directed Single-Source
+//                   Shortest Paths" (arXiv:2504.17033), Algorithm 3
+//
+// Purpose: Recursive bounded multi-source shortest path algorithm that processes
+//          vertices in batches using a priority queue data structure 𝒟.
+//
+// Algorithm Overview (Algorithm 3 - BMSSP(l, B, S)):
+//   Base case (l = 0): Call BaseCase(B, S)
+//   
+//   Recursive case:
+//   1. Run FindPivots(B, S) → (P, W)
+//   2. Initialize 𝒟 with capacity M = 2^{l-1} · t and boundary B
+//   3. Insert each x ∈ P with dist[x] into 𝒟
+//   4. Loop until termination:
+//      a. Pull batch (S_i, B_i) from 𝒟  [up to M vertices with dist ≤ B_i]
+//      b. Recursively solve: BMSSP(l-1, B, S_i) → (B_i', U_i)
+//      c. Add U_i to U and mark vertices complete
+//      d. Relax edges from U_i:
+//         - If dist[v] ∈ [B_i, B): Insert v into 𝒟
+//         - If dist[v] ∈ [B_i', B_i): Add v to K (batch prepend)
+//      e. BatchPrepend K to 𝒟
+//      f. Check termination:
+//         - Success: 𝒟 empty → return (B, U)
+//         - Partial: |U| ≥ k·2^l·t → return (B_i', U)
+//   5. Add W' = {v ∈ W | dist[v] < B'} to U
+//   6. Return (B', U)
+//
+// Invariants (Lemma 3.9):
+//   - Success case: B' = B, all vertices with dist < B are in U
+//   - Partial case: k·2^l·t ≤ |U| ≤ 4k·2^l·t, B' < B
+//   - U_i sets are disjoint across iterations
+//   - No edge inserted twice into 𝒟 at same recursion level
+//
+// Complexity: O(m + n log^{2/3} n) for constant-degree graphs
+//
+// ============================================================================
 
 #include <algorithm>
 #include <cstdint>

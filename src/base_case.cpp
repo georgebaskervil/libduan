@@ -1,3 +1,28 @@
+// ============================================================================
+// Phase 5: BaseCase (Algorithm 2 from paper)
+// ============================================================================
+//
+// Paper Reference: "Breaking the Sorting Barrier for Directed Single-Source
+//                   Shortest Paths" (arXiv:2504.17033), Algorithm 2
+//
+// Purpose: Solve BMSSP for the base case (l = 0) using a mini-Dijkstra limited
+//          by boundary B and returning at most k+1 vertices.
+//
+// Algorithm Overview (Algorithm 2):
+//   Preconditions: |S| = 1, source x is complete (dist[x] already optimal)
+//   1. Initialize priority queue Q with vertices reachable from x
+//   2. Extract up to k+1 vertices with dist < B
+//   3. If collected ≤ k vertices: return (B, U₀)
+//   4. If collected = k+1 vertices: return (max dist in U₀, U₀ \ {k+1'th vertex})
+//   5. Mark all returned vertices as complete
+//
+// Invariants:
+//   - |U| ≤ k
+//   - All u ∈ U have dist[u] < B' (returned boundary)
+//   - All u ∈ U are marked complete
+//
+// ============================================================================
+
 #include <queue>
 #include <cassert>
 #include <utility>

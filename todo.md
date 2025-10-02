@@ -185,9 +185,11 @@ Notes: Implemented degree validation instead of full transformation (pragmatic a
 
 ## Phase 12: Documentation (M)
 
-- [ ] Update README with BMSSP overview, parameters, limitations.
-- [ ] Add doc comments referencing paper lines (Algorithm steps) per function.
-- [ ] Provide invariants summary & debug flag usage.
+- [x] Update README with BMSSP overview, parameters, limitations.
+- [x] Add doc comments referencing paper lines (Algorithm steps) per function.
+- [x] Provide invariants summary & debug flag usage.
+
+Notes: Comprehensive documentation completed. README.md now includes full algorithm overview, parameter explanations (k, t, l_max), complexity analysis, build configuration, usage examples, and limitations. Added detailed header comments to bmssp.cpp, find_pivots.cpp, and base_case.cpp with algorithm overviews and paper references. Created INVARIANTS.md document detailing all algorithm invariants with verification notes. All 43 tests passing (100%).
 
 ## Phase 13: Cleanup & Migration (M)
 

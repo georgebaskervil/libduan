@@ -1,83 +1,209 @@
-# duansalgorithm
+# Duan's BMSSP Algorithm Implementation
 
-A minimal C++20 starter using CMake, targeting macOS (clang++) with GoogleTest via FetchContent. Includes VS Code presets/tasks, clangd tooling, and CI (macOS + Ubuntu).
+A faithful C++20 implementation of the **Breaking the Sorting Barrier** algorithm for computing single-source shortest paths (SSSP) in directed graphs with non-negative integer weights, from the paper:
 
-> License: Placeholder comment only. Add your own license text if needed.
+> **"Breaking the Sorting Barrier for Directed Single-Source Shortest Paths"**  
+> arXiv:2504.17033
 
-## Requirements
+This implementation achieves **O(m + n log^(2/3) n)** time complexity for constant-degree graphs, breaking the O(m + n log n) sorting barrier imposed by traditional Dijkstra-based approaches.
 
-- macOS with Xcode command line tools (clang, make)
+## Algorithm Overview
+
+The BMSSP (Bounded Multi-Source Shortest Path) algorithm uses:
+
+- **Layered relaxation** (FindPivots) to identify pivot vertices with large subtrees
+- **Recursive decomposition** with a priority queue data structure 𝒟 to batch-process vertices
+- **Base case** mini-Dijkstra for small subproblems
+- **Automatic parameter tuning**: k = ⌊log^(1/3) n⌋, t = ⌊log^(2/3) n⌋, l_max = ⌈log n / t⌉
+
+### Key Features
+
+✅ **Faithful paper implementation**: Algorithms 1-3 (FindPivots, BaseCase, BMSSP)  
+✅ **Automatic parameter computation**: No manual tuning required  
+✅ **Distance widening**: 32→64→128→BigInt on overflow  
+✅ **Comprehensive testing**: 43 tests covering correctness, edge cases, and invariants  
+✅ **Performance instrumentation**: Track relax operations, amortized costs, edge insertions  
+✅ **Degree validation**: Warn when input violates constant-degree assumption  
+
+## Quick Start
+
+### Requirements
+
+- macOS with Xcode command line tools (clang, make) or Linux with GCC/Clang
 - CMake >= 3.20
-- Optional: Ninja (not required, we use Unix Makefiles by default)
-- Optional: jemalloc (Homebrew: `brew install jemalloc`; Ubuntu: `sudo apt-get install -y libjemalloc-dev`)
+- Optional: jemalloc (macOS: `brew install jemalloc`, Ubuntu: `sudo apt-get install libjemalloc-dev`)
 
-## Quick start (macOS, zsh)
+### Build and Test
 
 ```zsh
-# Configure (Debug)
-cmake --preset debug
+# Configure (Debug with verifier enabled)
+cmake --preset debug -DENABLE_BMSSP_VERIFIER=ON
 
 # Build
 cmake --build --preset debug
 
-# Run the app
-./build/debug/bin/duansalgorithm
+# Run tests (43 tests)
+ctest --preset debug --output-on-failure
 
-# Run tests
+# Run the example application
+./build/debug/bin/duansalgorithm
+```
+
+### Basic Usage
+
+```cpp
+#include "cpp_starter/bmssp/bmssp.hpp"
+#include "cpp_starter/bmssp/graph.hpp"
+
+using namespace bmssp;
+
+// Create a directed graph
+Graph g(5);
+g.add_edge(0, 1, 10);
+g.add_edge(1, 2, 20);
+g.add_edge(0, 3, 5);
+g.add_edge(3, 2, 15);
+
+// Run SSSP from source 0
+std::vector<uint64_t> dist = run_sssp(g, 0);
+
+// dist[0] = 0, dist[1] = 10, dist[2] = 20 (via 3), dist[3] = 5
+```
+
+## Build Configuration
+
+### Core Algorithm Options
+
+- **`ENABLE_BMSSP_VERIFIER`** (default: OFF)  
+  Enable invariant checking, statistics collection, and degree validation.  
+  Recommended for development and debugging.
+
+- **`CONST_DEGREE_STRICT_MODE`** (default: OFF)  
+  Abort if input graph has degree > 2 (requires `ENABLE_BMSSP_VERIFIER`).  
+  Useful for testing that inputs satisfy the paper's constant-degree assumption.
+
+### Distance Representation Options
+
+- **`MIN_DISTANCE_BITS`** (default: 64)  
+  Initial distance width: 32 or 64 bits.
+
+- **`ENABLE_DISTANCE_WIDENING`** (default: ON)  
+  Automatically widen distances on overflow: 32→64→128 bits.  
+  If OFF, overflow throws an exception.
+
+- **`ENABLE_BIGINT_FALLBACK`** (default: OFF)  
+  Promote beyond 128-bit to arbitrary-precision BigInt on overflow.  
+  Experimental feature for extreme edge weights.
+
+### Examples
+
+```zsh
+# Release build with verifier
+cmake --preset release -DENABLE_BMSSP_VERIFIER=ON
+cmake --build --preset release
+
+# Strict mode (abort on degree > 2)
+cmake --preset debug -DENABLE_BMSSP_VERIFIER=ON -DCONST_DEGREE_STRICT_MODE=ON
+
+# BigInt fallback enabled
+cmake --preset debug -DENABLE_BIGINT_FALLBACK=ON
+```
+
+## Algorithm Parameters
+
+The implementation auto-computes optimal parameters based on graph size n:
+
+| Parameter | Formula | Description |
+|-----------|---------|-------------|
+| k | ⌊log^(1/3) n⌋ | Pivot threshold (≥1) |
+| t | ⌊log^(2/3) n⌋ | Batch size factor (≥1) |
+| l_max | ⌈log n / t⌉ | Maximum recursion depth |
+| M | 2^(l-1) · t | Data structure capacity at level l |
+
+These parameters achieve the O(m + n log^(2/3) n) complexity for constant-degree graphs.
+
+## Complexity and Limitations
+
+### Time Complexity
+
+- **O(m + n log^(2/3) n)** for constant-degree graphs (degree ≤ 2)
+- **O(m log n + n log^(2/3) n)** for general graphs
+
+The constant-degree assumption is crucial for the optimal bound. The implementation validates this assumption when `ENABLE_BMSSP_VERIFIER` is enabled.
+
+### Space Complexity
+
+- **O(n)** for distance arrays and auxiliary structures
+- Additional O(m) for edge relaxation tracking (verifier only)
+
+### Limitations
+
+1. **Integer weights only**: Non-negative integer edge weights required
+2. **Constant degree**: Optimal O(m + n log^(2/3) n) bound assumes degree ≤ 2
+3. **Dense parameter tuning**: Performance sensitive to k, t, l_max choices
+4. **Practical overhead**: May be slower than Dijkstra for small graphs (n < 10,000)
+
+## Testing
+
+The implementation includes 43 comprehensive tests:
+
+- **Correctness**: Validated against reference Dijkstra implementation
+- **Algorithm components**: FindPivots, BaseCase, BMSSP recursion
+- **Edge cases**: Empty graphs, disconnected vertices, single vertex
+- **Invariants**: Size bounds, disjointness, partial termination
+- **Distance widening**: Overflow handling, BigInt promotion
+- **Tie-breaking**: Lexicographic ordering on equal distances
+- **Degree checking**: Validation of constant-degree assumption
+
+Run tests with:
+
+```zsh
 ctest --preset debug --output-on-failure
 ```
 
-## Layout
+## Performance Instrumentation
 
-- `src/` app and library sources
-- `include/` public headers (exported)
-- `tests/` GoogleTest unit tests (CTest integrated)
-- `.vscode/` tasks and launch configs
+When `ENABLE_BMSSP_VERIFIER` is enabled, the implementation tracks:
 
-## Notes
+- **Relaxation operations**: attempts, improvements, equal-distance accepts
+- **Distance widening**: overflow events, bytes widened, BigInt usage
+- **Amortized metrics**: relax per edge, improvements per vertex
+- **Edge tracking**: Validates no edge inserted twice (key assumption)
 
-- C++ standard: C++20
-- On CI we use warnings-as-errors.
-- Default compilers on macOS are set to clang/clang++ in `CMakePresets.json`.
-- jemalloc linking is optional (ENABLE_JEMALLOC=ON by default if present on system). To disable:
+## Project Structure
 
-```zsh
-cmake --preset debug -DENABLE_JEMALLOC=OFF
+```text
+include/cpp_starter/bmssp/
+  ├── bmssp.hpp           # Top-level SSSP driver
+  ├── find_pivots.hpp     # Algorithm 1: FindPivots
+  ├── base_case.hpp       # Algorithm 2: BaseCase
+  ├── graph.hpp           # Graph representation
+  ├── state.hpp           # Distance state & widening
+  ├── structure.hpp       # Priority queue 𝒟 (Lemma 3.3)
+  ├── degree_check.hpp    # Degree validation
+  └── instrumentation.hpp # Performance stats
+
+src/
+  ├── bmssp.cpp           # Algorithm 3: BMSSP recursion
+  ├── find_pivots.cpp     # Layered relaxation & pivot selection
+  ├── base_case.cpp       # Mini-Dijkstra for base case
+  ├── bmssp_state.cpp     # Distance operations & relax
+  ├── structure.cpp       # Data structure 𝒟 implementation
+  ├── degree_check.cpp    # Degree computation & validation
+  └── instrumentation.cpp # Stats dumping
+
+tests/                    # 43 comprehensive tests
 ```
 
-### Apply jemalloc globally
+## References
 
-- Build-time global override (C++ new/delete):
+- Paper: "Breaking the Sorting Barrier for Directed Single-Source Shortest Paths" (arXiv:2504.17033)
+- Algorithms: FindPivots (Alg 1), BaseCase (Alg 2), BMSSP (Alg 3)
+- Data Structure: Lemma 3.3 (bounded priority queue 𝒟)
 
-```zsh
-cmake --preset debug -DENABLE_GLOBAL_JEMALLOC=ON
-cmake --build --preset debug
-```
+## License
 
-- Runtime preload (OS interposition):
-  - macOS (Homebrew path):
-
-  ```zsh
-  DYLD_INSERT_LIBRARIES=/opt/homebrew/lib/libjemalloc.dylib ./build/debug/bin/duansalgorithm
-  ```
-
-  - Linux (typical path, adjust if needed):
-
-  ```zsh
-  LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.2 ./build/debug/bin/duansalgorithm
-  ```
-
-## BMSSP distance reliability and performance
-
-This project implements integer distance widening with optional BigInt fallback and a fast-path to skip overflow checks when provably safe. Use these build flags:
-
-- ENABLE_DISTANCE_WIDENING (default ON): Automatically widen distances on overflow (32→64→128). If OFF, overflow throws.
-- ENABLE_BIGINT_FALLBACK (default OFF): Promote beyond 128-bit to BigInt on overflow. When ON, unit tests add BigInt coverage.
-- ENABLE_BMSSP_VERIFIER (default OFF): Enables counters and optional bench test output.
-
-Fast-path configuration
-
-You can configure a safe bound at runtime by setting `DistState::fastpath_u64_max_sum` (e.g., ≤ (n-1)·max_edge_weight). If `base + w` ≤ this bound, `relax` skips the overflow check on the hot path.
+> Placeholder comment only. Add your own license text if needed.
 
 Example (pseudo-usage inside your driver):
 
