@@ -137,6 +137,10 @@ if(BUILD_TESTING)
   tests/structure_test.cpp
   tests/recursion_against_dijkstra_test.cpp
   tests/sssp_driver_test.cpp
+  tests/find_pivots_test.cpp
+  tests/base_case_test.cpp
+  tests/partial_execution_test.cpp
+  tests/tie_breaking_test.cpp
     )
   if(ENABLE_BIGINT_FALLBACK)
     target_sources(cpp_starter_tests PRIVATE tests/bigint_relax_test.cpp)

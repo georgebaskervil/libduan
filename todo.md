@@ -155,14 +155,16 @@ Notes: All invariant checks implemented and enabled in find_pivots.cpp and bmssp
 
 ## Phase 9: Testing Suite (H)
 
-- [ ] Data structure 𝒟 unit tests (Insert / BatchPrepend / Pull).
-- [ ] FindPivots size bounds & synthetic pivot selection.
-- [ ] BaseCase k / k+1 threshold behavior.
-- [x] BMSSP recursion vs Dijkstra (small graphs). (tests/recursion_against_dijkstra_test.cpp)
-- [ ] Random constant-degree graphs vs Dijkstra (parameterized seeds/sizes).
-- [ ] Partial execution scenario tests.
-- [ ] Equal-distance multi-path tie-handling.
-- [x] BigInt widening / promotion tests for relax and INF acceptance.
+- [x] Data structure 𝒟 unit tests (Insert / BatchPrepend / Pull). ✅ (Tests #4-7: PartialPriority tests)
+- [x] FindPivots size bounds & synthetic pivot selection. ✅ (Tests #15-18: FindPivots tests)
+- [x] BaseCase k / k+1 threshold behavior. ✅ (Tests #19-23: BaseCase tests)
+- [x] BMSSP recursion vs Dijkstra (small graphs). ✅ (Test #8: BMSSPRecursion.SmallGraphsMatchDijkstra)
+- [x] Random constant-degree graphs vs Dijkstra (parameterized seeds/sizes). ✅ (Test #11: BMSSPDriver.RandomGraphsMatchDijkstra)
+- [x] Partial execution scenario tests. ✅ (Tests #24-27: BMSSPPartial tests)
+- [x] Equal-distance multi-path tie-handling. ✅ (Tests #28-32: EqualDistance tests)
+- [x] BigInt widening / promotion tests for relax and INF acceptance. ✅ (Tests #33-34: BMSSPBigInt tests)
+
+Notes: Comprehensive test suite implemented with 37 tests covering all major algorithm components. All tests passing (100%). Tests include: data structure operations, FindPivots invariants, BaseCase thresholds, recursion correctness, random graph validation, partial termination, tie-breaking, bigint widening, and boundary conditions.
 
 ## Phase 10: Performance & Instrumentation (M)
 
