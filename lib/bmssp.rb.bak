@@ -1,0 +1,105 @@
+# frozen_string_literal: true
+
+require_relative "bmssp/version"
+require_relative "bmssp/bmssp_ext"
+
+module BMSSP
+  class Error < StandardError; end
+
+  # Graph represents a directed graph with weighted edges
+  # 
+  # @example
+  #   graph = BMSSP::Graph.new(5)
+  #   graph.add_edge(0, 1, 10)
+  #   graph.add_edge(1, 2, 20)
+  #   graph.add_edge(0, 3, 5)
+  #   graph.add_edge(3, 2, 15)
+  #   
+  #   distances = graph.shortest_paths(0)
+  #   # => [0, 10, 20, 5, INF]
+  class Graph
+    # The infinity value used for unreachable vertices
+    INF = 2**62
+
+    # Create a new graph with n vertices
+    # @param n [Integer] number of vertices (0-indexed)
+    # @return [Graph]
+    def initialize(n)
+      @n = n
+      @graph_ptr = BMSSP::Ext.create_graph(n)
+      raise Error, "Failed to create graph" if @graph_ptr.nil?
+    end
+
+    # Add a directed edge from u to v with weight w
+    # @param u [Integer] source vertex (0-indexed)
+    # @param v [Integer] destination vertex (0-indexed)  
+    # @param w [Integer] edge weight (non-negative)
+    # @return [void]
+    # @raise [Error] if edge cannot be added
+    def add_edge(u, v, w)
+      raise ArgumentError, "Invalid vertex: #{u}" if u < 0 || u >= @n
+      raise ArgumentError, "Invalid vertex: #{v}" if v < 0 || v >= @n
+      raise ArgumentError, "Invalid weight: #{w}" if w < 0
+
+      BMSSP::Ext.add_edge(@graph_ptr, u, v, w)
+    end
+
+    # Compute single-source shortest paths from source vertex
+    # 
+    # Uses the BMSSP algorithm achieving O(m + n log^(2/3) n) time
+    # complexity for constant-degree graphs.
+    #
+    # @param source [Integer] source vertex (0-indexed)
+    # @return [Array<Integer>] distances from source to each vertex
+    #   (unreachable vertices have distance INF)
+    # @raise [Error] if computation fails
+    def shortest_paths(source)
+      raise ArgumentError, "Invalid source: #{source}" if source < 0 || source >= @n
+
+      BMSSP::Ext.run_sssp(@graph_ptr, source)
+    end
+
+    # Get the number of vertices in the graph
+    # @return [Integer]
+    attr_reader :n
+
+    # Alias for readability
+    alias size n
+
+    # Free the underlying C++ graph object
+    # Called automatically by GC, but can be called explicitly
+    # @return [void]
+    def free
+      BMSSP::Ext.free_graph(@graph_ptr) if @graph_ptr
+      @graph_ptr = nil
+    end
+
+    # Ensure cleanup on garbage collection
+    def self.finalize(graph_ptr)
+      proc { BMSSP::Ext.free_graph(graph_ptr) }
+    end
+
+    private
+
+    def initialize_copy(other)
+      raise TypeError, "Cannot clone BMSSP::Graph"
+    end
+  end
+
+  # Convenience method to create a graph and compute shortest paths
+  # 
+  # @example
+  #   edges = [[0, 1, 10], [1, 2, 20], [0, 3, 5], [3, 2, 15]]
+  #   distances = BMSSP.shortest_paths(5, edges, source: 0)
+  #   # => [0, 10, 20, 5, INF]
+  #
+  # @param n [Integer] number of vertices
+  # @param edges [Array<Array(Integer, Integer, Integer)>] array of [u, v, w] edges
+  # @param source [Integer] source vertex
+  # @return [Array<Integer>] distances from source
+  def self.shortest_paths(n, edges, source: 0)
+    graph = Graph.new(n)
+    edges.each { |u, v, w| graph.add_edge(u, v, w) }
+    graph.shortest_paths(source)
+  end
+end
