@@ -173,7 +173,7 @@ BMSSPResult bmssp(int l, uint64_t B, const std::vector<int>& S, Graph& g, DistSt
 
     // 4) Relax edges from U_i and bucket by interval
     std::vector<PartialPriority::Item> K;
-    int relax_attempts = 0, insert_count = 0, k_count = 0;
+    [[maybe_unused]] int relax_attempts = 0, insert_count = 0, k_count = 0;
     for (int u : sub.U) {
       if (u < 0 || static_cast<std::size_t>(u) >= g.size()) continue;
       for (const auto& e : g.neighbors(u)) {

@@ -67,7 +67,7 @@ bool relax(DistState& st, int u, int v, uint64_t w, bool allow_equal, bool* wide
   unsigned __int128 cand128 = 0;
   BigInt candBig;
 
-  auto width_bytes = [](DistWidth w) -> uint64_t {
+  [[maybe_unused]] auto width_bytes = [](DistWidth w) -> uint64_t {
     switch (w) {
       case DistWidth::W32:
         return 4;

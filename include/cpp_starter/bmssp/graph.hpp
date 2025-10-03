@@ -18,10 +18,10 @@ class Graph {
     return adj_.size();
   }
   void add_edge(int u, int v, uint64_t w) {
-    adj_[u].push_back({v, w});
+    adj_[static_cast<std::size_t>(u)].push_back({v, w});
   }
   const std::vector<Edge>& neighbors(int u) const {
-    return adj_[u];
+    return adj_[static_cast<std::size_t>(u)];
   }
 
  private:
