@@ -31,7 +31,7 @@ The BMSSP (Bounded Multi-Source Shortest Path) algorithm uses:
 
 - macOS with Xcode command line tools (clang, make) or Linux with GCC/Clang
 - CMake >= 3.20
-- Optional: jemalloc (macOS: `brew install jemalloc`, Ubuntu: `sudo apt-get install libjemalloc-dev`)
+- Optional: mimalloc (macOS: `brew install mimalloc`, Ubuntu: `sudo apt-get install libmimalloc-dev`)
 
 ### Build and Test
 
@@ -71,6 +71,27 @@ std::vector<uint64_t> dist = run_sssp(g, 0);
 ```
 
 ## Build Configuration
+
+### Memory Allocator Options
+
+- **`ENABLE_MIMALLOC`** (default: ON)  
+  Use mimalloc high-performance allocator if available.  
+  Provides better performance than system allocator for graph algorithms.
+
+- **`ENABLE_GLOBAL_MIMALLOC`** (default: OFF)  
+  Override global new/delete operators to use mimalloc.  
+  Applies mimalloc to all C++ allocations including STL containers.
+
+- **`ENABLE_MIMALLOC_DIAGNOSTICS`** (default: OFF)  
+  Print mimalloc version and statistics at program startup.  
+  Useful for verifying mimalloc configuration.
+
+**Optimized mimalloc settings** (automatically applied):
+- Large OS pages enabled for better TLB performance
+- Eager arena commit for faster allocation
+- NUMA-aware allocation for multi-socket systems
+- Zero purge delay for immediate memory reclamation
+- Huge OS page reservation when available
 
 ### Core Algorithm Options
 

@@ -6,7 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ## [Unreleased]
 
-### Major Implementation (Phases 0-12)
+### Changed
+- **Switched from jemalloc to mimalloc** for memory allocation
+  - Better performance characteristics for graph algorithms
+  - Optimized runtime configuration based on RobusText project
+  - Runtime options: large OS pages, NUMA-aware, zero purge delay
+  - Compiler flags: -O3 -march=native for optimal performance
+  - All 41/41 tests passing with mimalloc
+
+### Major Implementation (Phases 0-13)
 
 This project implements the BMSSP algorithm from the paper "Breaking the Sorting Barrier for Directed Single-Source Shortest Paths" (arXiv:2504.17033), achieving O(m + n log^(2/3) n) time complexity for constant-degree graphs.
 

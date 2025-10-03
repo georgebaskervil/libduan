@@ -22,9 +22,9 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Options
 option(ENABLE_WERROR "Treat warnings as errors" OFF)
-option(ENABLE_JEMALLOC "Link against jemalloc if available" ON)
-option(ENABLE_GLOBAL_JEMALLOC "Override global new/delete using jemalloc" OFF)
-option(ENABLE_JEMALLOC_DIAGNOSTICS "Print jemalloc version at startup (noisy)" OFF)
+option(ENABLE_MIMALLOC "Link against mimalloc if available" ON)
+option(ENABLE_GLOBAL_MIMALLOC "Override global new/delete using mimalloc" OFF)
+option(ENABLE_MIMALLOC_DIAGNOSTICS "Print mimalloc version and stats at startup" OFF)
 option(ENABLE_BMSSP_VERIFIER "Enable BMSSP invariant checking and verbose stats" OFF)
 option(CONST_DEGREE_STRICT_MODE "Abort if input graph degree > 2 (requires ENABLE_BMSSP_VERIFIER)" OFF)
 set(MIN_DISTANCE_BITS "64" CACHE STRING "Minimum distance bit width for BMSSP distances (32 or 64)")
@@ -94,33 +94,37 @@ target_link_libraries(duansalgorithm PRIVATE duansalgorithm::cpp_starter)
 
 enable_project_warnings(duansalgorithm)
 
-# jemalloc detection and usage (optional)
-if(ENABLE_JEMALLOC)
-  find_library(JEMALLOC_LIB jemalloc)
-  find_path(JEMALLOC_INCLUDE_DIR jemalloc/jemalloc.h
+# mimalloc detection and usage (optional)
+if(ENABLE_MIMALLOC)
+  find_library(MIMALLOC_LIB NAMES mimalloc mimalloc-static)
+  find_path(MIMALLOC_INCLUDE_DIR mimalloc.h
     PATHS
       /opt/homebrew/include
       /usr/local/include
       /usr/include
       $ENV{CPATH}
   )
-  if(JEMALLOC_LIB)
+  if(MIMALLOC_LIB)
     # Link publicly on the library so consumers get the allocator symbols.
-    target_link_libraries(cpp_starter PUBLIC ${JEMALLOC_LIB})
-    target_compile_definitions(cpp_starter PUBLIC HAVE_JEMALLOC)
-    if(JEMALLOC_INCLUDE_DIR)
-      target_include_directories(cpp_starter PUBLIC ${JEMALLOC_INCLUDE_DIR})
-      message(STATUS "jemalloc include: ${JEMALLOC_INCLUDE_DIR}")
+    target_link_libraries(cpp_starter PUBLIC ${MIMALLOC_LIB})
+    target_compile_definitions(cpp_starter PUBLIC HAVE_MIMALLOC)
+    if(MIMALLOC_INCLUDE_DIR)
+      target_include_directories(cpp_starter PUBLIC ${MIMALLOC_INCLUDE_DIR})
+      message(STATUS "mimalloc include: ${MIMALLOC_INCLUDE_DIR}")
     endif()
-    message(STATUS "jemalloc found: ${JEMALLOC_LIB}")
+    message(STATUS "mimalloc found: ${MIMALLOC_LIB}")
+    
+    # Apply optimized compiler flags for mimalloc builds
+    target_compile_options(cpp_starter PRIVATE -O3 -march=native)
+    target_compile_options(duansalgorithm PRIVATE -O3 -march=native)
   else()
-    message(STATUS "jemalloc not found; using default allocator")
+    message(STATUS "mimalloc not found; using default allocator")
   endif()
 endif()
 
-# Optionally override global new/delete using jemalloc (applies to STL by default)
-if(ENABLE_GLOBAL_JEMALLOC AND ENABLE_JEMALLOC AND JEMALLOC_LIB)
-  target_sources(duansalgorithm PRIVATE src/jemalloc_new_delete.cpp)
+# Optionally override global new/delete using mimalloc (applies to STL by default)
+if(ENABLE_GLOBAL_MIMALLOC AND ENABLE_MIMALLOC AND MIMALLOC_LIB)
+  target_sources(duansalgorithm PRIVATE src/mimalloc_new_delete.cpp)
 endif()
 
 # Testing setup
@@ -167,13 +171,13 @@ if(BUILD_TESTING)
   endif()
   target_compile_features(cpp_starter_tests PRIVATE cxx_std_20)
   enable_project_warnings(cpp_starter_tests)
-  if(ENABLE_GLOBAL_JEMALLOC AND ENABLE_JEMALLOC AND JEMALLOC_LIB)
-    target_sources(cpp_starter_tests PRIVATE src/jemalloc_new_delete.cpp)
+  if(ENABLE_GLOBAL_MIMALLOC AND ENABLE_MIMALLOC AND MIMALLOC_LIB)
+    target_sources(cpp_starter_tests PRIVATE src/mimalloc_new_delete.cpp)
   endif()
 
-  if(ENABLE_JEMALLOC_DIAGNOSTICS AND ENABLE_JEMALLOC AND JEMALLOC_LIB)
-    target_sources(duansalgorithm PRIVATE src/jemalloc_diag.cpp)
-    target_sources(cpp_starter_tests PRIVATE src/jemalloc_diag.cpp)
+  if(ENABLE_MIMALLOC_DIAGNOSTICS AND ENABLE_MIMALLOC AND MIMALLOC_LIB)
+    target_sources(duansalgorithm PRIVATE src/mimalloc_init.cpp)
+    target_sources(cpp_starter_tests PRIVATE src/mimalloc_init.cpp)
   endif()
 
   include(GoogleTest)
