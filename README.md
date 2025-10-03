@@ -46,7 +46,7 @@ cmake --build --preset debug
 ctest --preset debug --output-on-failure
 
 # Run the example application
-./build/debug/bin/duansalgorithm
+./build/debug/bin/libduan
 ```
 
 ### Basic Usage

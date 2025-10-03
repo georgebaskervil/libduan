@@ -8,7 +8,7 @@
 int main() {
   using cpp_starter::sum;
   int a = 2, b = 3;
-  std::cout << "Hello from duansalgorithm!\n";
+  std::cout << "Hello from libduan!\n";
   std::cout << "sum(" << a << ", " << b << ") = " << sum(a, b) << "\n";
   // Demonstrate using mimalloc-backed allocator (falls back to default if not available)
   std::vector<int, cpp_starter::MimallocAllocator<int>> vec;

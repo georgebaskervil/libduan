@@ -1,5 +1,5 @@
 ---
-# .clang-tidy configuration for duansalgorithm (BMSSP implementation)
+# .clang-tidy configuration for libduan (BMSSP implementation)
 #
 # This configuration enables checks appropriate for the project:
 # - C++20 modern practices

@@ -210,7 +210,7 @@ The algorithm achieves O(m + n log^(2/3) n) time complexity through:
 
 ## Contributing
 
-Bug reports and pull requests are welcome on GitHub at https://github.com/georgebaskervil/duansalgorithm.
+Bug reports and pull requests are welcome on GitHub at https://github.com/georgebaskervil/libduan.
 
 ## License
 

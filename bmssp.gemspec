@@ -15,13 +15,13 @@ Gem::Specification.new do |spec|
     provides bindings to a highly optimized C++20 implementation with mimalloc, delivering
     13-23x speedup over conventional Dijkstra's algorithm.
   DESC
-  spec.homepage = "https://github.com/georgebaskervil/duansalgorithm"
+  spec.homepage = "https://github.com/georgebaskervil/libduan"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 2.7.0"
 
   spec.metadata["homepage_uri"] = spec.homepage
-  spec.metadata["source_code_uri"] = "https://github.com/georgebaskervil/duansalgorithm"
-  spec.metadata["changelog_uri"] = "https://github.com/georgebaskervil/duansalgorithm/blob/main/CHANGELOG.md"
+  spec.metadata["source_code_uri"] = "https://github.com/georgebaskervil/libduan"
+  spec.metadata["changelog_uri"] = "https://github.com/georgebaskervil/libduan/blob/main/CHANGELOG.md"
 
   # Specify which files should be added to the gem when it is released.
   spec.files = Dir[

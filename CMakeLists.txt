@@ -1,8 +1,8 @@
-# Project: duansalgorithm
+# Project: libduan
 # License: Placeholder - add your license details here.
 
 cmake_minimum_required(VERSION 3.20)
-project(duansalgorithm VERSION 0.1.0 LANGUAGES CXX)
+project(libduan VERSION 0.1.0 LANGUAGES CXX)
 
 # Global C++ standard
 set(CMAKE_CXX_STANDARD 20)
@@ -62,7 +62,7 @@ add_library(cpp_starter
   src/instrumentation.cpp
   src/degree_check.cpp
 )
-add_library(duansalgorithm::cpp_starter ALIAS cpp_starter)
+add_library(libduan::cpp_starter ALIAS cpp_starter)
 
 target_include_directories(cpp_starter
   PUBLIC
@@ -86,13 +86,13 @@ target_compile_definitions(cpp_starter PUBLIC
 )
 
 # Executable
-add_executable(duansalgorithm
+add_executable(libduan
   src/main.cpp
 )
 
-target_link_libraries(duansalgorithm PRIVATE duansalgorithm::cpp_starter)
+target_link_libraries(libduan PRIVATE libduan::cpp_starter)
 
-enable_project_warnings(duansalgorithm)
+enable_project_warnings(libduan)
 
 # mimalloc detection and usage (optional)
 if(ENABLE_MIMALLOC)
@@ -116,7 +116,7 @@ if(ENABLE_MIMALLOC)
     
     # Apply optimized compiler flags for mimalloc builds
     target_compile_options(cpp_starter PRIVATE -O3 -march=native)
-    target_compile_options(duansalgorithm PRIVATE -O3 -march=native)
+    target_compile_options(libduan PRIVATE -O3 -march=native)
   else()
     message(STATUS "mimalloc not found; using default allocator")
   endif()
@@ -124,7 +124,7 @@ endif()
 
 # Optionally override global new/delete using mimalloc (applies to STL by default)
 if(ENABLE_GLOBAL_MIMALLOC AND ENABLE_MIMALLOC AND MIMALLOC_LIB)
-  target_sources(duansalgorithm PRIVATE src/mimalloc_new_delete.cpp)
+  target_sources(libduan PRIVATE src/mimalloc_new_delete.cpp)
 endif()
 
 # Testing setup
@@ -164,7 +164,7 @@ if(BUILD_TESTING)
     target_sources(cpp_starter_tests PRIVATE tests/widen_bench_test.cpp)
   endif()
   target_link_libraries(cpp_starter_tests PRIVATE
-    duansalgorithm::cpp_starter
+    libduan::cpp_starter
     GTest::gtest_main
   )
   if(ENABLE_BMSSP_VERIFIER)
@@ -177,7 +177,7 @@ if(BUILD_TESTING)
   endif()
 
   if(ENABLE_MIMALLOC_DIAGNOSTICS AND ENABLE_MIMALLOC AND MIMALLOC_LIB)
-    target_sources(duansalgorithm PRIVATE src/mimalloc_init.cpp)
+    target_sources(libduan PRIVATE src/mimalloc_init.cpp)
     target_sources(cpp_starter_tests PRIVATE src/mimalloc_init.cpp)
   endif()
 
