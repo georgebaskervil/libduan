@@ -153,6 +153,7 @@ if(BUILD_TESTING)
   tests/tie_breaking_test.cpp
   tests/instrumentation_test.cpp
   tests/degree_check_test.cpp
+  tests/performance_test.cpp
     )
   if(ENABLE_BIGINT_FALLBACK)
     target_sources(cpp_starter_tests PRIVATE tests/bigint_relax_test.cpp)
