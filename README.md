@@ -1,4 +1,5 @@
-# Duan's BMSSP Algorithm Implementation
+# libduan: An implementation of the bounded multi-source shortest path algorithm 
+(sometimes informally known as duan's algorithm before it had a proper name, hence the name of this library)
 
 A faithful C++20 implementation of the **Breaking the Sorting Barrier** algorithm for computing single-source shortest paths (SSSP) in directed graphs with non-negative integer weights, from the paper:
 
